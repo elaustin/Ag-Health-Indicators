@@ -1,0 +1,128 @@
+---
+title: "Health Indicators"
+author: "Elena Austin"
+date: "January 5, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, message=F, error=F,warning=F)
+
+library(data.table)
+library(bit64)
+library(ggplot2)
+library(ggthemes)
+
+setwd("C:\\Users\\Elena\\OneDrive\\Documents\\UW Postdoc\\PNASH\\Ag Health Indicators")
+
+# Download relevant data
+# stateabb <- "wa"
+# nqwibase <- paste0("http://lehd.ces.census.gov/pub/", stateabb, "/")
+# release <- "R2016Q2"
+# # select DVD-sa_fs for sex/age and DVD-se_fs for sex/education change to fa for firm age
+# type <- "DVD-rh_fs"
+# 
+# # get file naming schema
+# # http://lehd.ces.census.gov/data/schema/latest/lehd_csv_naming.html
+# 
+# qwi_rh_fs <- paste0("qwi_",stateabb,"_rh_fs_gs_n4_op_u.csv.gz")
+#                     #4 digit NAICS state level
+# 
+# #download to drive:
+# 
+# download.file(url=paste(nqwibase,release,type,qwi_rh_fs,
+#                         sep="/"),destfile=qwi_rh_fs)
+
+qwir<-fread("qwi_wa_rh_fs_gs_n4_op_u.csv")
+
+NAICSstuc<-fread("2012_NAICS_Structure.csv")[,1:3,with=F]
+
+# conr <- gzcon(url(
+#   paste(nqwibase,release,type,qwi_rh_fs,
+#         sep="/")))
+# txt <- readLines(conr)
+# qwir <- lapply(txt,FUN = function(x) {
+#   read.csv(textConnection(x),header=F)
+#  closeAllConnections()})
+# qwir<-data.table(qwir)
+
+```
+
+## Summary of QWI quarterly data
+
+The public-use Quarterly Workforce Indicators (QWI) data from the Longitudinal Employer-Household Dynamics Program are available for download from http://lehd.ces.census.gov. The data presented here were downloaded on January 5th 2017. Data was extracted to show the WA state wide data by race and ethnicity tabulation. Other possible tabulations include by sex/age and sex/education. Data were tabulated by firm size and by 4 digit NAICS codes. The data was not seasonally adjusted. 
+
+
+```{r analysis, fig.height=10, fig.width=10}
+data_rf_fs<-qwir
+
+NAICSstuc[,industry:=as.numeric(as.character(`2012 NAICS Code`))]
+setkey(NAICSstuc,industry)
+setkey(data_rf_fs,industry)
+
+data_rf_fs<-NAICSstuc[data_rf_fs]
+
+data_rf_fs[, dig2NAICS := substring(industry,1,2) ]
+
+
+data_rf_fs[dig2NAICS=="11", list(`Full-Quarter Employment`=mean(Emp,na.rm=T)),
+             by=c("industry","firmsize", "year","quarter","ethnicity","education")]
+
+fwrite(data_rf_fs[dig2NAICS=="11"&year==2014, .(`Full-Quarter Employment`=sum(sEmpS,na.rm=T),
+                                         `New Hires` =sum(HirA,na.rm=T),
+                                         `New Hires Earnings (monthly)`= mean(EarnHirNS, na.rm=T),
+                                         `Average Monthly Earnings (stable)` = mean(EarnS, na.rm=T)),
+           by=c("industry","2012 NAICS Title","quarter","year","ethnicity","education")],"summary2014q.csv")
+
+fwrite(data_rf_fs[dig2NAICS=="11"&year==2014, .(
+  `Mean Begining of Quarter Employment`=mean(Emp,na.rm=T),
+                                         `New Hires` =mean(HirA,na.rm=T),
+                                         `New Hires Earnings (monthly)`= mean(EarnHirNS, na.rm=T),
+                                         `Average Monthly Earnings (stable)` = mean(EarnS, na.rm=T)),
+           by=c("industry","2012 NAICS Title","year","ethnicity","education")],"summary2014.csv")
+
+data_rf_fs[, year_quarter := paste0(year,".",100*(as.numeric(quarter)/4))]
+
+ggplot(data_rf_fs[dig2NAICS=="11", mean(Emp,na.rm=T), 
+                  by=c("year_quarter","2012 NAICS Title","ethnicity","education")], 
+       aes(as.numeric(year_quarter), V1, color=ethnicity))+
+  geom_point()+stat_smooth() + ylab("Beginning-of-Quarter Employment: Counts")+
+  xlab("Year") + scale_color_discrete(labels=c("All", "Not Hispanic","Hispanic"))+
+  facet_wrap(~`2012 NAICS Title`, scales="free_y",
+             labeller = labeller(`2012 NAICS Title` = 
+                                   label_wrap_gen(width = 10)))+theme_fivethirtyeight(8)
+
+firm_size_names <- c(
+  `0` = "All Firm Sizes",
+  `1` = "<20 Employees",
+  `2` = "20-49 Employees",
+  `3` = "50-249 Employees",
+  `4` = "250-499 Employees",
+  `5` = "500+ Employees"
+)
+
+
+lapply(unique(data_rf_fs[dig2NAICS=="11"]$`2012 NAICS Title`),FUN = function(x)
+ggplot(data_rf_fs[dig2NAICS=="11" & `2012 NAICS Title` %in% x, 
+                  mean(EarnBeg,na.rm=T), 
+                  by=c("year_quarter","ethnicity","firmsize")], 
+       aes(as.numeric(year_quarter), V1, color=ethnicity))+
+  geom_point()+stat_smooth() +ggtitle(x)+ 
+  ylab("Beginning-of-Quarter Employment: Average Monthly Earnings")+
+  xlab("Year") + scale_color_discrete(labels=c("All", "Not Hispanic","Hispanic"))+
+  facet_wrap(~firmsize, nrow=2,scales="free_y", labeller = as_labeller(firm_size_names))+theme_fivethirtyeight(8))
+
+
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
