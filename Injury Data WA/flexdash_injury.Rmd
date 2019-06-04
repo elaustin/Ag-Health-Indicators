@@ -1,23 +1,29 @@
 ---
-title: "LNI public injury data"
+title: "WA State Claims Data"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
     social: menu
     source_code: embed
+    theme: cerulean
 runtime: shiny
 ---
 
 ```{r global, include=FALSE}
 # load data in 'global' chunk so it can be shared by all users of the dashboard
 library(pacman)
-p_load(datasets, ggplot2, data.table, shiny)
-rate = readRDS("C:/Users/elaustin/OneDrive/Documents/UW Postdoc/PNASH/DataCOD/Logging/rate_table.RDS")
+p_load(datasets, ggplot2, data.table, shiny, shinyWidgets)
+rate = readRDS("SICRate.RDS")
+nature = readRDS("SICNature.RDS")
+type = readRDS("SICType.RDS")
 ```
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
 ```
+
+Industry Information
+===================================== 
 
 Inputs {.sidebar}
 -----------------------------------------------------------------------
@@ -26,19 +32,23 @@ Inputs {.sidebar}
 ```{r}
 
 selectizeInput('sicval', 'Industry Group', unique(rate$`SIC Description`),
-               selected = "DAIRY FARMS")
+               selected = "DAIRY FARMS", multiple = T)
 
-selectInput('ycol', 'Industry Group', c("Total Number of Firms", 
+selectInput('ycol', 'Plotting Variable', c("Claims per 200000 hr",
+                                           "Total Number of Firms", 
                                            "Number of Claim-Free Firms",
-                                           "Claims per 200000 hr"),
-                selected="Claims per 200000 hr")
-    
-sliderInput("range", "Range:",
-                  min = min(rate$year), max = max(rate$year),
-                  step = 1, value = c(min(rate$year), max(rate$year)))
+                                           "Percent of Claim-Free Firms"),
+            selected="Claims per 200000 hr", multiple = F)
+
+sliderInput("range", "Year:",
+            min = min(rate$year), max = max(rate$year),
+            step = 1, value = c(min(rate$year), max(rate$year)))
 
 selectInput('group', 'Firm Size', choices = levels(rate$`Firm Size`), 
-            selected = "50+ Employees")
+            selected = "50+ Employees",  multiple = TRUE)
+#checkboxInput('bar', 'By Firm Size', value = FALSE)
+
+
 
 
 ```
@@ -52,38 +62,102 @@ Column {.tabset}
 
 ```{r}
 palette(c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
-  "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"))
+          "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"))
 
 # Combine the selected variables into a new data frame
 selectedData <- reactive({
   newdata = copy(rate)
-  newdata = rate[year %in% input$range[1]:input$range[2] &
-         `SIC Description` %in% input$sicval &
-         `Firm Size` %in% input$group, ]
-  setnames(newdata,input$ycol, "y" )
+  newdata = newdata[year %in% input$range[1]:input$range[2] &
+                      `SIC Description` %in% input$sicval &
+                      `Firm Size` %in% input$group, ]
+  if(input$ycol == "Percent of Claim-Free Firms"){
+    newdata[, year := as.numeric(year)]
+    newdata = 
+      newdata[, list(num = sum(as.numeric(`Number of Claim-Free Firms`)),
+                     denom = sum(as.numeric(`Total Number of Firms`) )),
+              by = c("SIC Description", "year")]
+    newdata[, y := num/denom*100]
+  } else if (input$ycol == "Claims per 200000 hr") {
+    setnames(newdata,input$ycol, "y" )
+    newdata[, year := as.numeric(year)]
+    newdata = newdata[, list(y = mean(as.numeric(y))),
+                      by = c("SIC Description", "year")]
+    
+  } else {
+    setnames(newdata,input$ycol, "y" )
+  }
   newdata
 })
 
 plotTitle <- reactive({
-  paste("Claims per 100 Full Time Workers for", input$sicval )
+  input$sicval
 })
 
 renderPlot({
   
   waprivate = data.table(Year = c(2006:2015), 
                          Injury = c(6.6, 6.1, 5.6, 5.1, 4.8, 4.9, 4.8, 4.75, 4.6, 4.5))
+  plotdata = data.table(selectedData())
   
-  ggplot(data = data.table(selectedData()), aes(as.numeric(year), as.numeric(y)),
-         color= input$group) + 
-  geom_point() + stat_smooth(se=F, span = 0.8) + 
-  theme_light(14)+ xlab("") + ggtitle(plotTitle()) +
-  ylab(input$ycol) +
-  scale_x_continuous(breaks = input$range[1]:input$range[2], 
-                     minor_breaks = input$range[1]:input$range[2]) +
-  geom_point(data  = waprivate, aes(Year, Injury, color="WA All Private Sector")) + 
-  stat_smooth(data  = waprivate, aes(Year, Injury, color="WA All Private Sector"), se=F) + theme(legend.position="bottom") +
-  labs(color = "Firm Size")
-
+  if(nrow(plotdata)>1)
+  {
+  
+  if(input$ycol %in% "Claims per 200000 hr"){
+    
+    ggplot(data = plotdata, aes(as.numeric(year), as.numeric(y), 
+                                color=  `SIC Description`)) + 
+      geom_point(size = 3) + stat_smooth(se=F, span = 0.8) + 
+      theme_light(24)+ xlab("") + 
+      ggtitle(paste( paste(input$sicval , collapse = "\n"), 
+                     "\nClaims per 100 Full Time Workers")) +
+      ylab(input$ycol) +
+      scale_x_continuous(breaks = input$range[1]:input$range[2], 
+                         minor_breaks = input$range[1]:input$range[2]) +
+      geom_point(data  = waprivate, aes(Year, Injury, color="WA All Private Sector")) + 
+      stat_smooth(data  = waprivate, aes(Year, Injury, color="WA All Private Sector"), se=F) + theme(legend.position="bottom") +
+      labs(color = "Firm Size") +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  } else if (input$ycol %in% "Percent of Claim-Free Firms") {
+    
+    
+    ggplot(data = plotdata, 
+           aes(as.numeric(as.character(year)), as.numeric(y), 
+               color=  `SIC Description`)) + 
+      geom_point(size = 3) + stat_smooth(se=F, span = 0.8) + 
+      theme_light(24)+ xlab("") + 
+      ggtitle(paste( paste(input$sicval , collapse = "\n"), 
+                     input$ycol)) +
+      ylab(input$ycol) +
+      ylim(0,100) + 
+      scale_x_continuous(breaks = input$range[1]:input$range[2], 
+                         minor_breaks = input$range[1]:input$range[2])+ 
+      theme(legend.position="bottom") + 
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    
+  }  else {
+    
+    
+    plotdata[, year := as.factor(year)]
+    
+    plotdata = plotdata[, lapply(.SD, FUN= function(x) sum(as.numeric(x))), 
+                          by = c("year", "SIC Description")]
+    
+    ggplot(data = plotdata, 
+           aes(as.numeric(as.character(year)), as.numeric(y), 
+               color=  `SIC Description`)) + 
+      geom_point(size = 3) + stat_smooth(se=F, span = 0.8) + 
+      theme_light(24)+ xlab("") + 
+      ggtitle(paste( paste(input$sicval , collapse = "\n"), 
+                     input$ycol)) +
+      ylab(input$ycol) +
+      scale_x_continuous(breaks = input$range[1]:input$range[2], 
+                         minor_breaks = input$range[1]:input$range[2])+ 
+      theme(legend.position="bottom") + 
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  }
+  
+  }
+  
 })
 ```
 
@@ -91,43 +165,253 @@ renderPlot({
 ###Experience Factor Distribution
 
 ```{r}
-palette(c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
-  "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"))
 
 # Combine the selected variables into a new data frame
 efdata <- reactive({
   newdata = copy(rate)
-  newdata = rate[year %in% input$range[1]:input$range[2] &
-         `SIC Description` %in% input$sicval &
-         `Firm Size` %in% input$group, ]
-    setnames(newdata,input$ycol, "y" )
-    newdata[, grep(experience,colnames(newdata), ignore.case= T, value = T)]
-    melt(newdata[,-c("SIC Code", "SIC Description","Firm Size", 
-                     "Number of Claim-Free Firms")])
-  newdata
+  newdata = newdata[year %in% input$range[1]:input$range[2] &
+                      `SIC Description` %in% input$sicval &
+                      `Firm Size` %in% input$group, ]
+  
+  namesef = newdata[, grep("experience",colnames(newdata), ignore.case= T, value = T)]
+  namesef = grep("average",namesef, ignore.case= T, value = T, invert = T)
+  meltnewdata =  melt(newdata, 
+                      id.vars = c("year","Total Number of Firms","SIC Description", "Firm Size")  ,
+                      measure.vars = namesef)
+  meltnewdata[, `Total Number of Firms` := as.numeric(`Total Number of Firms`)]
+  meltnewdata[, value := as.numeric(value)]
+  meltnewdata[, propFirms := value/`Total Number of Firms`*100]
+  meltnewdata
 })
 
 plotTitle <- reactive({
-  paste("Claims per 100 Full Time Workers for", input$sicval )
+  paste(input$sicval )
 })
 
 renderPlot({
   
+  efplot = data.table(efdata())
   
-  
-  waprivate = data.table(Year = c(2006:2015), 
-                         Injury = c(6.6, 6.1, 5.6, 5.1, 4.8, 4.9, 4.8, 4.75, 4.6, 4.5))
-  
-  ggplot(data = data.table(selectedData()), aes(as.numeric(year), as.numeric(y)),
-         color= input$group) + 
-  geom_point() + stat_smooth(se=F, span = 0.8) + 
-  theme_light(14)+ xlab("") + ggtitle(plotTitle()) +
-  ylab(input$ycol) +
-  scale_x_continuous(breaks = input$range[1]:input$range[2], 
-                     minor_breaks = input$range[1]:input$range[2]) +
-  geom_point(data  = waprivate, aes(Year, Injury, color="WA All Private Sector")) + 
-  stat_smooth(data  = waprivate, aes(Year, Injury, color="WA All Private Sector"), se=F) + theme(legend.position="bottom") +
-  labs(color = "Firm Size")
-
+  if(nrow(efplot)>1){
+  ggplot(data = efplot, aes(variable, propFirms, fill=`Firm Size`) )+ 
+    geom_boxplot() +
+    theme_light(20) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    ylab("Percent of Total Firms") +
+    xlab("") +
+    ylim(0, 100)+
+    scale_x_discrete(labels=c("<0.5","0.5-1","1","1-1.5", "1.5")) +
+    xlab("Experience Factor (EF)") +
+    facet_wrap(~`SIC Description`) + 
+    theme(strip.text = element_text(size=18), strip.background = element_rect(fill="violet"))
+  }
 })
 ```
+
+Job Category
+===================================== 
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+
+
+```{r}
+
+setorder(type, -'Number of Claims')
+
+selectizeInput('socval', 'Job Category', unique(type$`SOC2K Description`),
+               selected = "Agricultural Workers, All", multiple = T)
+
+selectizeInput('outcome', 'Select Metric of Interest', c("Total Cost",
+                                                         "Number of Claims",
+                                                         "Average Cost per Year"),
+               selected = "Number of Claims", multiple = F)
+
+sliderInput("topn", "Number of Categories to Display:",
+            min = 0, max = 10,
+            step = 1, value = 6)
+
+sliderInput("range2", "Year:",
+            min = min(type$year), max = max(type$year),
+            step = 1, value = c(min(type$year), max(type$year)))
+
+
+```
+
+
+Column {.tabset}
+-----------------------------------------------------------------------
+
+###Type of Injuries (Cost)
+
+
+```{r}
+
+typedata <- reactive({
+  
+  if(input$outcome == "Total Cost"){
+    newdata = copy(type)
+    newdata = newdata[year %in% input$range2[1]:input$range2[2] &
+                        `SOC2K Description` %in% input$socval , ]
+    newdata = newdata[,list(`Number of Claims` = sum(as.numeric(`Number of Claims`)), 
+                  `Incurred Costs Total` = sum(as.numeric(`Incurred Costs Total`))), 
+            by = c("SOC2K Description", "Accident Type")]
+    
+    setorder(newdata, "SOC2K Description", -"Incurred Costs Total")
+    newdata = lapply(unique(newdata$`SOC2K Description`), FUN = function(x){
+      temp = newdata[`SOC2K Description` %in% x, ][1:input$topn,]
+      temp[, `Accident Type` := factor(`Accident Type`, 
+                                              levels = rev(`Accident Type`))] 
+      temp
+    })
+    newdata = rbindlist(newdata)
+    setnames(newdata, "Incurred Costs Total", "y")
+    newdata[, y := as.numeric(y)/1000]
+    newdata
+  } else if (input$outcome == "Number of Claims"){
+    
+    newdata = copy(type)
+    newdata = newdata[year %in% input$range2[1]:input$range2[2] &
+                        `SOC2K Description` %in% input$socval , ]
+    newdata = newdata[,list(`Number of Claims` = sum(as.numeric(`Number of Claims`)), 
+                  `Incurred Costs Total` = sum(as.numeric(`Incurred Costs Total`))), 
+            by = c("SOC2K Description", "Accident Type")]
+    
+    setorder(newdata, "SOC2K Description", -"Number of Claims")
+    newdata = lapply(unique(newdata$`SOC2K Description`), FUN = function(x){
+      temp = newdata[`SOC2K Description` %in% x, ][1:input$topn,]
+      temp[, `Accident Type` := factor(`Accident Type`, 
+                                              levels = rev(`Accident Type`))] 
+      temp
+    })
+    newdata = rbindlist(newdata)
+    setnames(newdata, "Number of Claims", "y")
+    
+    newdata
+    
+  } else if(input$outcome == "Average Cost per Year"){
+     newdata = copy(type)
+    newdata = newdata[year %in% input$range2[1]:input$range2[2] &
+                        `SOC2K Description` %in% input$socval , ]
+    newdata = newdata[,list(`Number of Claims` = sum(as.numeric(`Number of Claims`)), 
+                  `Incurred Costs Total` = sum(as.numeric(`Incurred Costs Total`))), 
+            by = c("SOC2K Description", "Accident Type")]
+    newdata = newdata[,  `Average Cost per Claim` := `Incurred Costs Total`/
+                        length(input$range2[1]:input$range2[2])]
+    
+    setorder(newdata, "SOC2K Description", -"Average Cost per Claim")
+    newdata = lapply(unique(newdata$`SOC2K Description`), FUN = function(x){
+      temp = newdata[`SOC2K Description` %in% x, ][1:input$topn,]
+      temp[, `Accident Type` := factor(`Accident Type`, 
+                                              levels = rev(`Accident Type`))] 
+      temp
+    })
+    newdata = rbindlist(newdata)
+    setnames(newdata, "Average Cost per Claim", "y")
+    newdata[, y := as.numeric(y)/1000]
+    
+    newdata
+    
+  }
+})
+
+ylabplot <- reactive({
+  
+  if(input$outcome == "Total Cost"){
+    
+    "Total Incurred Cost (Thousands $)"
+  } else if (input$outcome == "Number of Claims"){
+    "Number of Claims"
+  } else if (input$outcome == "Average Cost per Claim"){
+    "Average Cost per year (Thousands $) "
+  }
+})
+
+renderPlot({
+  
+  typeplotdata = data.table(typedata())
+  
+  if(nrow(typeplotdata)>1){
+    ggplot(typeplotdata, aes(`Accident Type`,
+                             as.numeric(y))) +
+      geom_bar(stat = "identity") + theme_light(16) +
+      ylab(ylabplot()) +
+      facet_wrap(~`SOC2K Description`, scales = "free_y") + 
+      xlab("") + coord_flip()
+  }
+  
+})
+
+
+
+
+```
+
+
+###Nature of Injuries
+```{r}
+
+naturedata <- reactive({
+  
+  if(input$outcome == "Total Cost"){
+    newdata = copy(nature)
+    newdata = newdata[year %in% input$range2[1]:input$range2[2] &
+                        `SOC2K Description` %in% input$socval , ]
+    
+    newdata[, cat := reorder(`Incurred Costs Average`,  
+                             -as.numeric(`Number of Claims`), sum, na.rm=T)]
+    newdata[, totalcost := sum(as.numeric(`Incurred Costs Total`), na.rm=T), by = cat]
+    
+    newdata[, cat := reorder(`Injury Nature`,  as.numeric(`Incurred Costs Total`), sum, na.rm=T)]
+    newdata = newdata[cat %in% unique(cat)[1:input$topn], ]
+    setnames(newdata, "Incurred Costs Total", "y")
+    newdata[, y := as.numeric(y)/1000]
+    newdata
+  } else if (input$outcome == "Number of Claims"){
+    
+    newdata = copy(nature)
+    newdata = newdata[year %in% input$range2[1]:input$range2[2] &
+                        `SOC2K Description` %in% input$socval , ]
+    
+    newdata[, cat := reorder(`Incurred Costs Average`,  
+                             -as.numeric(`Number of Claims`), sum, na.rm=T)]
+    newdata[, totalcost := sum(as.numeric(`Incurred Costs Total`), na.rm=T), by = cat]
+    
+    newdata[, cat := reorder(`Injury Nature`,  as.numeric(`Number of Claims`), sum, na.rm=T), ]
+    newdata = newdata[cat %in% unique(cat)[1:input$topn], ]
+    setnames(newdata, "Number of Claims", "y")
+    newdata
+    
+  }
+})
+
+ylabplot <- reactive({
+  
+  if(input$outcome == "Total Cost"){
+    
+    "Total Incurred Cost (Thousands $)"
+  } else if (input$outcome == "Number of Claims"){
+    "Number of Claims"
+  }
+})
+
+renderPlot({
+  
+  natureplotdata = data.table(naturedata())
+  
+  if(nrow(natureplotdata)>1){
+    
+    ggplot(natureplotdata, aes(cat,
+                               as.numeric(y))) +
+      geom_bar(stat = "identity") + theme_light(16) +
+      ylab(ylabplot()) +
+      facet_wrap(~`SOC2K Description`) + 
+      xlab("") + coord_flip()
+  }
+  
+})
+
+
+
+```
+

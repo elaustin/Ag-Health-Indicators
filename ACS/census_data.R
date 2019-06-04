@@ -13,7 +13,7 @@ p_load(tidyverse, tidycensus, leaflet, sf, data.table)
 #B06007_005 Speak Spanish:!!Speak English less than "very well"
 
 wa_pop <- get_acs(geography = "tract", 
-                  variables = c("B03001_003", "B08126_002", "B05006_001",
+                  variables = c("B03001_003E", "B08126_002", "B05006_001",
                                 "B06007_004", "B06007_002", "B06007_005"), 
                   state = c("WA"),
                   summary_var = c("B01003_001"),
@@ -43,7 +43,7 @@ lookuptable = data.table(Description =
                          summary_comp = 
                            "summary_est")
 
-ind = 3
+ind = 1
 
 numer= wa_pop[, lookuptable[ind, ]$colname_val]
 denom = wa_pop[, lookuptable[ind, ]$summary_comp]
@@ -64,7 +64,7 @@ wa_pop %>%
   st_transform(crs = "+init=epsg:4326") %>%
   leaflet() %>%
   addProviderTiles(provider = "CartoDB.Positron") %>%
-  addPolygons(popup = ~ paste(tract, "<br>",county, "<br>" , lookuptable[3]$Description, unlist(numerator),"<br>","Total Population",unlist(denominator) ),
+  addPolygons(popup = ~ paste(tract, "<br>",county, "<br>" , lookuptable[ind]$Description, unlist(numerator),"<br>","Total Population",unlist(denominator) ),
               stroke = FALSE,
               smoothFactor = 0,
               fillOpacity = 0.7,
