@@ -16,6 +16,33 @@ p_load(datasets, ggplot2, data.table, shiny, shinyWidgets)
 rate = readRDS("SICRate.RDS")
 nature = readRDS("SICNature.RDS")
 type = readRDS("SICType.RDS")
+soc = setDT(read.csv("soc-structure-2000.csv"))
+
+myvals = data.table(soc2k = "temp", type = "temp")
+
+myvals = lapply(unique(nature[!is.na(`SOC2K Description`)]$`SOC2K Description`), 
+       FUN = function(value){
+  temp = unlist(grep(value, unique(soc$Management.Occupations), value = TRUE))[1]
+  temp1 = data.table(soc2k = temp, type = value)
+  temp1
+})
+
+myvals = rbindlist(myvals)
+myvals = myvals[!is.na(soc2k) & !is.na(type)]
+
+setkey(myvals, type)
+setkey(type, `SOC2K Description`)
+type = myvals[type]
+type[, `SOC2K Description` := soc2k]
+type = type[!is.na(`SOC2K Description`)]
+
+setkey(nature, `SOC2K Description`)
+nature = myvals[nature]
+nature[, `SOC2K Description` := soc2k]
+
+nature = nature[!is.na(`SOC2K Description`)]
+type = type[!is.na(`SOC2K Description`)]
+
 ```
 
 ```{r setup, include=FALSE}
@@ -203,7 +230,7 @@ renderPlot({
     scale_x_discrete(labels=c("<0.5","0.5-1","1","1-1.5", "1.5")) +
     xlab("Experience Factor (EF)") +
     facet_wrap(~`SIC Description`) + 
-    theme(strip.text = element_text(size=18), strip.background = element_rect(fill="violet"))
+    theme(strip.text = element_text(size=18), strip.background = element_rect(fill="blue"))
   }
 })
 ```
@@ -220,11 +247,12 @@ Inputs {.sidebar}
 setorder(type, -'Number of Claims')
 
 selectizeInput('socval', 'Job Category', unique(type$`SOC2K Description`),
-               selected = "Agricultural Workers, All", multiple = T)
+               selected = "Farmworkers, Farm and Ranch Animals", multiple = T)
 
 selectizeInput('outcome', 'Select Metric of Interest', c("Total Cost",
                                                          "Number of Claims",
-                                                         "Average Cost per Year"),
+                                                         "Average Cost per Year",
+                                                         "Average Cost per Claim"),
                selected = "Number of Claims", multiple = F)
 
 sliderInput("topn", "Number of Categories to Display:",
@@ -296,8 +324,31 @@ typedata <- reactive({
     newdata = newdata[,list(`Number of Claims` = sum(as.numeric(`Number of Claims`)), 
                   `Incurred Costs Total` = sum(as.numeric(`Incurred Costs Total`))), 
             by = c("SOC2K Description", "Accident Type")]
-    newdata = newdata[,  `Average Cost per Claim` := `Incurred Costs Total`/
+    newdata = newdata[,  `Average Cost per Year` := `Incurred Costs Total`/
                         length(input$range2[1]:input$range2[2])]
+    
+    setorder(newdata, "SOC2K Description", -"Average Cost per Year")
+    newdata = lapply(unique(newdata$`SOC2K Description`), FUN = function(x){
+      temp = newdata[`SOC2K Description` %in% x, ][1:input$topn,]
+      temp[, `Accident Type` := factor(`Accident Type`, 
+                                              levels = rev(`Accident Type`))] 
+      temp
+    })
+    newdata = rbindlist(newdata)
+    setnames(newdata, "Average Cost per Year", "y")
+    newdata[, y := as.numeric(y)/1000]
+    
+    newdata
+    
+  } else if(input$outcome == "Average Cost per Claim"){
+     newdata = copy(type)
+    newdata = newdata[year %in% input$range2[1]:input$range2[2] &
+                        `SOC2K Description` %in% input$socval , ]
+    newdata = newdata[,list(`Number of Claims` = sum(as.numeric(`Number of Claims`)), 
+                  `Incurred Costs Total` = sum(as.numeric(`Incurred Costs Total`))), 
+            by = c("SOC2K Description", "Accident Type")]
+    newdata = newdata[,  `Average Cost per Claim` := `Incurred Costs Total`/
+                        `Number of Claims`]
     
     setorder(newdata, "SOC2K Description", -"Average Cost per Claim")
     newdata = lapply(unique(newdata$`SOC2K Description`), FUN = function(x){
@@ -318,26 +369,33 @@ typedata <- reactive({
 ylabplot <- reactive({
   
   if(input$outcome == "Total Cost"){
-    
-    "Total Incurred Cost (Thousands $)"
-  } else if (input$outcome == "Number of Claims"){
+        "Total Incurred Cost (Thousands $)"
+  } else if(input$outcome == "Number of Claims"){
     "Number of Claims"
-  } else if (input$outcome == "Average Cost per Claim"){
-    "Average Cost per year (Thousands $) "
+  } else  if(input$outcome == "Average Cost per Year"){
+    "Average Cost per year (Thousands $)"
+  } else  if(input$outcome == "Average Cost per Claim"){
+    "Average Cost per Claim (Thousands $)"
   }
 })
 
 renderPlot({
   
-  typeplotdata = data.table(typedata())
+  typeplotdata = NULL
+  try({
+  typeplotdata = data.table(typedata())}, silent = T)
+    
   
-  if(nrow(typeplotdata)>1){
+  if(!is.null(nrow(typeplotdata))){
     ggplot(typeplotdata, aes(`Accident Type`,
                              as.numeric(y))) +
       geom_bar(stat = "identity") + theme_light(16) +
       ylab(ylabplot()) +
-      facet_wrap(~`SOC2K Description`, scales = "free_y") + 
-      xlab("") + coord_flip()
+      facet_wrap(~`SOC2K Description`, 
+                 labeller = labeller(`SOC2K Description` = label_wrap_gen(18)),
+                 scales = "free_y") + 
+      xlab("") + coord_flip() +
+      theme(strip.text = element_text(size=18), strip.background = element_rect(fill="blue"))
   }
   
 })
