@@ -37,7 +37,7 @@ rate = lapply(2:10, FUN = function(x) {
 
 rate = rbindlist(rate)
 
-yearly_path = "inetempstatsbyNAICS.xlsx"
+yearly_path = "Injury Data WA/inetempstatsbyNAICS_2018.xlsx"
 
 rate2 = lapply(1, FUN = function(x) {
   
@@ -84,11 +84,16 @@ rate2$`Firm Size` = factor(rate2$`Firm Size`, levels =
                               "50+ Employees")) 
 
 
+sum(rate$`SIC Description` %in%
+rate2$`NAICS Description`)
 
 combined  = rbindlist(list(rate[`SIC Description` %in% sic.vals], 
                            rate2[`NAICS Description` %in% naics.vals]))
 
-waprivate = data.table(Year = c(2006:2015), Injury = c(6.6, 6.1, 5.6, 5.1, 4.8, 4.9, 4.8, 4.75, 4.6, 4.5))
+#obtained from LNI BLS reports
+#https://www.lni.wa.gov/claims/for-employers/workers-compensation-injury-data/labor-statistics-blsi
+waprivate = data.table(Year = c(2006:2021), 
+                       Injury = c(6.6, 6.1, 5.6, 5.1, 4.8, 4.9, 4.8, 4.75, 4.6, 4.5, 4.3, 4.0, 4.0, 3.8, 3.5, 3.5))
 
 ggplot(combined, aes(as.numeric(year), as.numeric(`Claims per 200000 hr`), 
                      color = `Firm Size`)) + 
@@ -116,7 +121,7 @@ nature = lapply(1:15, FUN = function(x) {
                                                                              "Incurred Costs Average"), 
                                col_types = "text"))
   temp = temp[!is.na("Injury Nature")   ,]
-  temp$year = end_year - x
+  temp$year = end_year - x +1
   
   temp
 })
@@ -143,7 +148,7 @@ type = lapply(1:15, FUN = function(j) {
                                                                             "Incurred Costs Average") , 
                                col_types = "text"))
   temp = temp[!is.na(`Accident Type`)   ,]
-  temp$year = end_year - j
+  temp$year = end_year - j + 1
   temp
 })
 
@@ -168,7 +173,7 @@ source = lapply(1:11, FUN = function(j) {
                                                                               "Incurred Costs Average") , 
                                col_types = "text"))
   temp = temp[!is.na(`Accident source`)   ,]
-  temp$year = 2018 - j
+  temp$year = end_year - j +1
   temp
 })
 
@@ -180,7 +185,8 @@ source[, Year := reorder(Year, as.numeric(year))]
  
 #create datasets
 
-saveRDS(nature, "Injury Data WA/SICNature.RDS")
+saveRDS(nature, "Injury Data WA/SOC2KNature.RDS")
 saveRDS(rate, "Injury Data WA/SICRate.RDS")
-saveRDS(type, "Injury Data WA/SICType.RDS")
-saveRDS(source, "Injury Data WA/SICSource.RDS")
+saveRDS(type, "Injury Data WA/SOC2KType.RDS")
+saveRDS(source, "Injury Data WA/SOC2KSource.RDS")
+saveRDS(waprivate, "Injury Data WA/WAPrivate_rate.RDS")
