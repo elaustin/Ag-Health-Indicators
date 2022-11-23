@@ -33,7 +33,7 @@ data_sa_fs <- fread("qwi_wa_sa_fs_gs_n4_op_u.csv")
 #generate summary tables
 
 # get data schema
-# http://lehd.ces.census.gov/data/schema/latest/lehd_public_use_schema.html
+# https://lehd.ces.census.gov/data/schema/V4.1.3/lehd_csv_naming.html 
 #get column names
 
 data_rf_fs[year%in%2008:2014&
