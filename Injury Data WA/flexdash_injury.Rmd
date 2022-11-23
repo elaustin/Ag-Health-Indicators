@@ -21,8 +21,9 @@ library(DT)
 library(stringr)
 
 rate = readRDS("SICRate.RDS")
-nature = readRDS("SICNature.RDS")
-type = readRDS("SICType.RDS")
+nature = readRDS("SOC2KNature.RDS")
+type = readRDS("SOC2KType.RDS")
+source = readRDS("SOC2KSource.RDS")
 soc = setDT(read.csv("soc-structure-2000.csv"))
 
 setnames(rate, "Claims per 200000 hr", "Claims per 100 FT workers")
@@ -50,12 +51,19 @@ type = myvals[type]
 type[, `SOC2K Description` := soc2k]
 type = type[!is.na(`SOC2K Description`)]
 
+setkey(myvals, type)
+setkey(source, type)
+source = myvals[source]
+source[, `SOC2K Description` := soc2k]
+
 setkey(nature, `SOC2K Description`)
 nature = myvals[nature]
 nature[, `SOC2K Description` := soc2k]
 
 nature = nature[!is.na(`SOC2K Description`)]
 type = type[!is.na(`SOC2K Description`)]
+source = source[!is.na(`SOC2K Description`)]
+
 
 ```
 
