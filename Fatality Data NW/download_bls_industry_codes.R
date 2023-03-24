@@ -35,5 +35,10 @@ ind_codes <- tibble(string = sel_opt_affh) %>%
   separate(string, c("code", "name"), "\\s{2,}") %>% 
   mutate(across(everything(), str_trim))
 
+# Add "Seafood Product [...]" industry 
+ind_codes <- ind_codes %>%
+  bind_rows(tibble(code = "3117XX",
+                   name = "Seafood Product Preparation and Packaging"))
+
 # Save industry codes
 write_csv(ind_codes, here(data_dir, "ind_codes.csv"))

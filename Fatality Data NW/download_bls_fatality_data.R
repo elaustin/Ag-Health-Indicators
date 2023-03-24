@@ -35,10 +35,6 @@ if (!file.exists(ind_codes_fn)) {
 }
 ind_codes <- read_csv(ind_codes_fn)
 
-# ind_codes <- ind_codes %>% 
-#   bind_rows(tibble(code = "311710",
-#                    name = "Seafood Product Preparation and Packaging"))
-
 # Define functions
 
 # Return a vector of URLs that replicate the manual XLSX download process

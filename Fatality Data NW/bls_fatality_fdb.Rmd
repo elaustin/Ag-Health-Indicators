@@ -11,11 +11,12 @@ editor_options:
 ```{r setup, include=FALSE}
 # Attach packages, installing as needed
 if(!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
-pacman::p_load(here, readr, dplyr, tidyr, stringr, purrr, forcats,
+pacman::p_load(conflicted, here, readr, dplyr, tidyr, stringr, purrr, forcats,
                flexdashboard, ggplot2, plotly)
 
 # Set options
 options(readr.show_col_types = FALSE, readr.show_progress = FALSE)
+conflicts_prefer(dplyr::filter(), .quiet = TRUE)
 
 # Read data file
 data_dir <- here("Fatality Data NW")
@@ -28,7 +29,7 @@ if (file.exists(rds_file)) {
   saveRDS(df, rds_file)
 }
 
-df <- df %>% filter(code == "GP2AFH")
+df <- df %>% filter(`code` == "GP2AFH")
 
 # Find level-1 Characteristics
 Char_1 <- df %>% filter(!is.na(Char_2), is.na(Char_3)) %>% pull(Char_1) %>% 
