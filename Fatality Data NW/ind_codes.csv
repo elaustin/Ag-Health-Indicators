@@ -1,0 +1,90 @@
+code,name
+GP2AFH,"Agriculture, forestry, fishing and hunting"
+111XXX,Crop production
+1111XX,Oilseed and grain farming
+11111X,Soybean farming
+11112X,Oilseed (except soybean) farming
+11113X,Dry pea and bean farming
+11114X,Wheat farming
+11115X,Corn farming
+11116X,Rice farming
+11119X,Other grain farming
+111191,Oilseed and grain combination farming
+1112XX,Vegetable and melon farming
+11121X,Vegetable and melon farming
+111211,Potato farming
+1113XX,Fruit and tree nut farming
+11131X,Orange groves
+11132X,Citrus (except orange) groves
+11133X,Noncitrus fruit and tree nut farming
+111331,Apple orchards
+111332,Grape vineyards
+111333,Strawberry farming
+111334,Berry (except strawberry) farming
+111335,Tree nut farming
+111336,Fruit and tree nut combination farming
+1114XX,"Greenhouse, nursery, and floriculture production"
+11141X,Food crops grown under cover
+111411,Mushroom production
+11142X,Nursery and floriculture production
+111421,Nursery and tree production
+111422,Floriculture production
+1119XX,Other crop farming
+11191X,Tobacco farming
+11192X,Cotton farming
+11193X,Sugarcane farming
+11194X,Hay farming
+11199X,All other crop farming
+111991,Sugar beet farming
+111992,Peanut farming
+112XXX,Animal production and aquaculture
+1121XX,Cattle ranching and farming
+11211X,"Beef cattle ranching and farming, including feedlots"
+112111,Beef cattle ranching and farming
+112112,Cattle feedlots
+11212X,Dairy cattle and milk production
+1122XX,Hog and pig farming
+11221X,Hog and pig farming
+1123XX,Poultry and egg production
+11231X,Chicken egg production
+11232X,Broilers and other meat type chicken production
+11233X,Turkey production
+11234X,Poultry hatcheries
+1124XX,Sheep and goat farming
+11241X,Sheep farming
+11242X,Goat farming
+1125XX,Aquaculture
+11251X,Aquaculture
+112511,Finfish farming and fish hatcheries
+112512,Shellfish farming
+1129XX,Other animal production
+11291X,Apiculture
+11292X,Horses and other equine production
+11293X,Fur-bearing animal and rabbit production
+113XXX,Forestry and logging
+1131XX,Timber tract operations
+11311X,Timber tract operations
+1132XX,Forest nurseries and gathering of forest products
+11321X,Forest nurseries and gathering of forest products
+1133XX,Logging
+11331X,Logging
+114XXX,"Fishing, hunting and trapping"
+1141XX,Fishing
+11411X,Fishing
+114111,Finfish fishing
+114112,Shellfish fishing
+1142XX,Hunting and trapping
+11421X,Hunting and trapping
+115XXX,Support activities for agriculture and forestry
+1151XX,Support activities for crop production
+11511X,Support activities for crop production
+115111,Cotton ginning
+115112,"Soil preparation, planting, and cultivating"
+115113,"Crop harvesting, primarily by machine"
+115114,Postharvest crop activities (except cotton ginning)
+115115,Farm labor contractors and crew leaders
+115116,Farm management services
+1152XX,Support activities for animal production
+11521X,Support activities for animal production
+1153XX,Support activities for forestry
+11531X,Support activities for forestry

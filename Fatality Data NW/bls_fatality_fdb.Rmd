@@ -1,0 +1,1081 @@
+---
+title: "US BLS Worker Fatalities: Agriculture, Forestry, Fishing and Hunting (GP2AFH) Industry: PNW States (AK, ID, OR, and WA), 2011-2021"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+# Attach packages, installing as needed
+if(!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
+pacman::p_load(here, readr, dplyr, tidyr, stringr, purrr, forcats,
+               flexdashboard, ggplot2, plotly)
+
+# Set options
+options(readr.show_col_types = FALSE, readr.show_progress = FALSE)
+
+# Read data file
+data_dir <- here("Fatality Data NW")
+rds_file <- here(data_dir, 'long-bls-fatal-aff-11-21.rds')
+csv_file <- here(data_dir, 'long-bls-fatal-aff-11-21.csv')
+if (file.exists(rds_file)) {
+  df <- readRDS(rds_file)
+} else {
+  df <- read_csv(csv_file)
+  saveRDS(df, rds_file)
+}
+
+df <- df %>% filter(code == "GP2AFH")
+
+# Find level-1 Characteristics
+Char_1 <- df %>% filter(!is.na(Char_2), is.na(Char_3)) %>% pull(Char_1) %>% 
+  unique()
+```
+
+
+```{r, include = FALSE}
+# Define a function to make a generic ggplot object without any geoms
+make_ggplot <- function(df, x_label, by = 'State', wrap_width = 50, 
+                        color = FALSE) {
+  p_levels <- df %>% pull(Characteristic) %>% unique()
+  p_labels <- p_levels %>% str_wrap(width = wrap_width)
+  df <- df %>% 
+    mutate(Characteristic = factor(Characteristic, 
+                                   levels = p_levels,
+                                   labels = p_labels)) %>%
+    select(State, !!x_label := Characteristic, Year, Fatalities) %>% 
+    drop_na(Fatalities)
+  if (color == FALSE) {
+    ggplot(df, aes(x = .data[[x_label]], y = Fatalities))
+  } else {
+    x_var <- ifelse(by == 'State', 'Year', 'State')
+    ggplot(df, aes(x = .data[[x_var]], y = Fatalities, 
+                   color = .data[[x_label]], fill = .data[[x_label]]))
+  }
+}
+
+# Define a function to make a generic ggplot object without any geoms 
+# filtered by Char_1 == Char1
+make_ggplot_1 <- function (df, Char1, Char2 = NULL, Char3 = NULL, by = 'State', 
+                           wrap_width = 50, color = FALSE) {
+  df <- df %>% 
+    filter(Char_1 == Char1, !is.na(Char_2), is.na(Char_3)) %>% 
+    select("Characteristic" = Char_2, Fatalities, State, Year)
+  make_ggplot(df, Char1, by = by, wrap_width = wrap_width, color = color)
+}
+
+# Define a function to make a generic ggplot object without any geoms 
+# filtered by Char_1 == Char1 and Char_2 == Char2
+make_ggplot_2 <- function (df, Char1, Char2, Char3 = NULL, by = 'State', 
+                           wrap_width = 50, color = FALSE) {
+  df <- df %>% 
+    filter(Char_1 == Char1, Char_2 == Char2, !is.na(Char_3), is.na(Char_4)) %>% 
+    select("Characteristic" = Char_3, Fatalities, State, Year)
+  make_ggplot(df, Char2, by = by, wrap_width = wrap_width, color = color)
+}
+
+# Define a function to make a generic ggplot object without any geoms 
+# filtered by Char_1 == Char1 and Char_2 == Char2 and Char_3 == Char3
+make_ggplot_3 <- function (df, Char1, Char2, Char3, by = 'State', 
+                           wrap_width = 50, color = FALSE) {
+  df <- df %>% 
+    filter(Char_1 == Char1, Char_2 == Char2, Char_3 == Char3, 
+           !is.na(Char_4), is.na(Char_5)) %>% 
+    select("Characteristic" = Char_4, Fatalities, State, Year)
+  make_ggplot(df, Char3, by = by, wrap_width = wrap_width, color = color)
+}
+
+# Define a function to make a box plot building upon a generic ggplot object
+make_boxplot <- function(df, Char_1, Char_2 = NULL, Char_3 = NULL, by = 'State', 
+                         wrap_width = 50, nrow = NULL, color = FALSE, 
+                         FUN = NULL) {
+  if (is.null(nrow)) nrow <- ifelse(by == "Year", 2, 1)
+  if (is.null(FUN)) {
+    FUN = case_when(
+      is.null(Char_2) && is.null(Char_3) ~ "make_ggplot_1",
+      !is.null(Char_2) && is.null(Char_3) ~ "make_ggplot_2",
+      .default = "make_ggplot_3"
+    )
+  }
+  
+  arg <- list(df = df, Char1 = Char_1, Char2 = Char_2, Char3 = Char_3, by = by,
+              wrap_width = wrap_width)
+  do.call(FUN, arg) + geom_boxplot() + facet_wrap(by, nrow = nrow) + 
+    coord_flip()
+}
+
+# Define a function to make a scatter plot building upon a generic ggplot object
+make_scatterplot <- function(df, Char_1, Char_2 = NULL, Char_3 = NULL, 
+                             by = 'State', wrap_width = 50, color = TRUE, 
+                             nrow = NULL, FUN = NULL) {
+  if (is.null(nrow)) nrow <- ifelse(by == "Year", 2, 1)
+  if (is.null(FUN)) {
+    FUN = case_when(
+      is.null(Char_2) && is.null(Char_3) ~ "make_ggplot_1",
+      !is.null(Char_2) && is.null(Char_3) ~ "make_ggplot_2",
+      .default = "make_ggplot_3"
+    )
+  }
+  
+  arg <- list(df = df, Char1 = Char_1, Char2 = Char_2, Char3 = Char_3, by = by,
+              wrap_width = wrap_width, color = color)
+  flip <- if (by == "Year") coord_flip()
+  smooth <- if (by == "State") geom_smooth(method = "lm", formula = y ~ x)
+  do.call(FUN, arg) + geom_point() + 
+    smooth + facet_wrap(by, nrow = nrow) + flip
+}
+
+# Define a function to make a bar plot building upon a generic ggplot object
+make_barplot <- function(df, Char_1, Char_2 = NULL, Char_3 = NULL, 
+                             by = 'State', wrap_width = 50, color = TRUE, 
+                             nrow = NULL, FUN = NULL) {
+  if (is.null(nrow)) nrow <- ifelse(by == "Year", 2, 1)
+  if (is.null(FUN)) {
+    FUN = case_when(
+      is.null(Char_2) && is.null(Char_3) ~ "make_ggplot_1",
+      !is.null(Char_2) && is.null(Char_3) ~ "make_ggplot_2",
+      .default = "make_ggplot_3"
+    )
+  }
+  
+  arg <- list(df = df, Char1 = Char_1, Char2 = Char_2, Char3 = Char_3, by = by,
+              wrap_width = wrap_width, color = color)
+  flip <- if (by == "Year") coord_flip()
+  fill_color <- ifelse(by == "Year", "State", "Year")
+  do.call(FUN, arg) + geom_col() + facet_wrap(by, nrow = nrow) + flip
+}
+
+plot_bar_char <- function(df, Char, nrow = 1, wrap_width = 60) {
+  ggplot(df %>% 
+           filter(Characteristic %in% Char) %>% 
+           mutate(Year = factor(Year)) %>%
+           mutate(Characteristic = str_wrap(Characteristic, wrap_width)) %>%
+           group_by(Characteristic, State, Year) %>%
+           summarise(Fatalities = sum(Fatalities, na.rm = TRUE), 
+                     .groups = "drop"), 
+  aes(x = Year, Fatalities, fill = State)) + geom_col() + 
+    facet_wrap("Characteristic", nrow = nrow)
+}
+```
+
+```{r, include=FALSE}
+# Top-5 Characteristics to plot at finer detail
+df %>% filter(!is.na(Char_1), !is.na(Char_2), !is.na(Char_3)) %>% 
+  group_by(Char_1, Char_2) %>% 
+  summarise(Fatalities = sum(Fatalities, na.rm = TRUE)) %>% 
+  filter(Fatalities != 0) %>% arrange(desc(Fatalities), Char_1, Char_2) %>% 
+  head(5)
+
+# Top-15 Characteristics to plot at even finer detail
+df %>% filter(!is.na(Char_1), !is.na(Char_2), !is.na(Char_3), !is.na(Char_4)) %>%
+group_by(Char_1, Char_2, Char_3) %>%
+summarise(Fatalities = sum(Fatalities, na.rm = TRUE)) %>%
+filter(Fatalities != 0) %>% arrange(desc(Fatalities), Char_1, Char_2, Char_3) %>%
+head(15)
+
+# Top-3 Level-3 Characteristics per Category
+cats <- unique(df$Char_1)
+top3 <- map(cats, ~ df %>% filter(Char_1 == .x, !is.na(Char_2), 
+                                  !is.na(Char_3), is.na(Char_4)) %>%
+              group_by(Characteristic) %>% 
+              summarise(Fatalities = sum(Fatalities, na.rm = TRUE), 
+                        .groups = "drop") %>% 
+              arrange(desc(Fatalities)) %>% head(3) %>% 
+              pull(Characteristic)) %>% setNames(cats)
+```
+
+Total
+=======================================================================
+
+Row {data-height=300}
+-----------------------------------------------------------------------
+
+```{r}
+df_total <- df %>% 
+  filter(Char_1 == "Total") %>%
+  group_by(Year, State) %>% 
+  summarize(Fatalities = sum(Fatalities, na.rm = TRUE), .groups= "drop") %>%
+  filter(Fatalities != 0) %>% arrange(State, Year, Fatalities)
+```
+
+### Annual Fatalities (faceted by State)
+
+```{r}
+p <- ggplot(df_total, aes(x = Year, y = Fatalities)) + geom_col() + 
+  facet_wrap("State", nrow = 1)
+ggplotly(p)
+```
+
+### Annual Fatalities (faceted by State)
+
+```{r}
+p <- ggplot(df_total, aes(x = Year, y = Fatalities)) + geom_point() + 
+  geom_smooth(formula = y ~ x, method = "lm") + 
+  facet_wrap("State", nrow = 1)
+ggplotly(p)
+```
+
+Row {data-height=300}
+-----------------------------------------------------------------------
+
+```{r}
+df_category <- df %>% 
+  filter(!is.na(Char_1), !is.na(Char_2),  is.na(Char_3)) %>% 
+  mutate(Year = factor(Year)) %>%
+  filter(Char_1 != "Total") %>% 
+  group_by(Char_1, Year, State) %>% 
+  summarize(Fatalities = sum(Fatalities, na.rm = TRUE), .groups= "drop") %>%
+  arrange(Char_1, State, Year, Fatalities)
+```
+
+### Annual Fatalities (faceted by Category)
+
+```{r}
+p <- ggplot(df_category, aes(x = Year, y = Fatalities, fill = State)) + 
+  geom_col() + facet_wrap("Char_1", nrow = 2) + 
+  theme(axis.text.x = element_text(angle = 90))
+ggplotly(p)
+```
+
+```{r}
+pers_char <- c("Gender", "Employee status", "Age", "Race or ethnic origin")
+df_personal_char2 <- df %>% 
+    mutate(Year = factor(Year)) %>%
+    filter(!is.na(Char_1), !is.na(Char_2), is.na(Char_3), 
+           Char_1 %in% pers_char) %>% 
+    rename("Category" = Char_1) %>%
+    group_by(Category, Characteristic) %>% 
+    summarise(Fatalities = sum(Fatalities, na.rm = TRUE), .groups = "drop") %>% 
+    arrange(desc(Fatalities), Category, Characteristic) %>% 
+    select(Fatalities, Category, Characteristic)
+p <- map(pers_char, ~ ggplot(df_personal_char2 %>% filter(Category == .x), 
+            aes(x  = fct_reorder(Characteristic, Fatalities), 
+                y = Fatalities)) + 
+  geom_col() + coord_flip() + xlab("Characteristic")) %>% setNames(pers_char)
+```
+
+Row {data-height=200}
+-----------------------------------------------------------------------
+
+### Total Fatalities, by Employee status
+
+```{r}
+ggplotly(p[['Employee status']])
+```
+
+### Total Fatalities, by Gender
+
+```{r}
+ggplotly(p[['Gender']])
+```
+
+Row {data-height=400}
+-----------------------------------------------------------------------
+
+### Total Fatalities, by Age
+
+```{r}
+ggplotly(p[['Age']])
+```
+
+### Total Fatalities, by Race or ethnic origin
+
+```{r}
+ggplotly(p[['Race or ethnic origin']])
+```
+
+Row {data-height=600}
+-----------------------------------------------------------------------
+
+### Total Fatalities, Top-15 Characteristics (excluding employee status or personal characteristics)
+
+```{r}
+df_top15_char3 <- df %>% 
+    mutate(Year = factor(Year)) %>%
+    filter(!is.na(Char_1), !is.na(Char_2), !is.na(Char_3), is.na(Char_4), 
+           ! Char_1 %in% c("Total", "Gender", "Employee status", "Age",
+                           "Race or ethnic origin")) %>% 
+    mutate(Characteristic = str_wrap(paste(Char_1, Char_2, Char_3, sep = ": "), 60)) %>%
+    group_by(Char_1, Characteristic) %>% 
+    summarise(Fatalities = sum(Fatalities, na.rm = TRUE), .groups = "drop") %>% 
+    arrange(desc(Fatalities), Char_1, Characteristic) %>% 
+    select(Fatalities, Category = Char_1, Characteristic) %>% head(15)
+p <- ggplot(df_top15_char3, 
+            aes(x  = fct_reorder(Characteristic, Fatalities), 
+                y = Fatalities,
+                fill = Category)) + 
+  geom_col() + coord_flip() + 
+  xlab("Characteristic")
+ggplotly(p)
+```
+
+
+Row {data-height=1200}
+-----------------------------------------------------------------------
+
+### Annual Fatalities, Top-15 Characteristics (excluding employee status or personal characteristics)
+
+```{r}
+df_top15 <- df %>% 
+  mutate(Year = factor(Year)) %>%
+  filter(!is.na(Char_1), !is.na(Char_2), !is.na(Char_3), is.na(Char_4), 
+         ! Char_1 %in% c("Total", "Gender", "Employee status", "Age",
+                         "Race or ethnic origin")) %>% 
+  mutate(Characteristic = str_wrap(paste(Char_1, Char_2, Char_3, sep = ": "), 60)) %>%
+  filter(Characteristic %in% df_top15_char3$Characteristic) %>%
+  group_by(Characteristic, Year, State) %>% 
+  summarise(Fatalities = sum(Fatalities, na.rm = TRUE), .groups = "drop") %>% 
+  arrange(desc(Fatalities), Year, State, Characteristic)
+p <- ggplot(df_top15, aes(x = Year, y = Fatalities, fill = State)) + 
+  geom_col() + facet_wrap("Characteristic", ncol = 3) + 
+  theme(axis.text.x = element_text(angle = 90))
+ggplotly(p)
+```
+
+Employee status
+=======================================================================
+
+Row {data-height=300}
+-----------------------------------------------------------------------
+
+### Employee status: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_scatterplot(df, "Employee status", by = "State"))
+```
+
+Row {data-height=300}
+-----------------------------------------------------------------------
+
+### Employee status: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_scatterplot(df, "Employee status", by = "Year"))
+```
+
+
+Gender
+=======================================================================
+
+Row {data-height=300}
+-----------------------------------------------------------------------
+
+### Gender: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_scatterplot(df, "Gender", by = "State"))
+```
+
+Row {data-height=300}
+-----------------------------------------------------------------------
+
+### Gender: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_scatterplot(df, "Gender", by = "Year"))
+```
+
+
+Age
+=======================================================================
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Age: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_barplot(df, "Age", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Age: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_barplot(df, "Age", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Age: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Age", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Age: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Age", by = "Year"))
+```
+
+
+Race or ethnic origin
+=======================================================================
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Race or ethnic origin: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_barplot(df, "Race or ethnic origin", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Race or ethnic origin: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_barplot(df, "Race or ethnic origin", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Race or ethnic origin: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Race or ethnic origin", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Race or ethnic origin: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Race or ethnic origin", by = "Year"))
+```
+
+
+Event or exposure
+=======================================================================
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Event or exposure: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_barplot(df, "Event or exposure", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Event or exposure: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_barplot(df, "Event or exposure", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Event or exposure: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Event or exposure", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Event or exposure: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Event or exposure", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Transportation incidents: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Event or exposure", "Transportation incidents", 
+                      by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Transportation incidents: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Event or exposure", "Transportation incidents", 
+                      by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Transportation incidents: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_scatterplot(df, "Event or exposure", "Transportation incidents", 
+                          by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Roadway incidents involving motorized land vehicle: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Event or exposure", "Transportation incidents", 
+                      "Roadway incidents involving motorized land vehicle", 
+                      by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Roadway incidents involving motorized land vehicle: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Event or exposure", "Transportation incidents", 
+                      "Roadway incidents involving motorized land vehicle", 
+                      by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Roadway incidents involving motorized land vehicle: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_scatterplot(df, "Event or exposure", "Transportation incidents", 
+                          "Roadway incidents involving motorized land vehicle", 
+                          by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Contact with objects and equipment: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Event or exposure", 
+                      "Contact with objects and equipment", 
+                      by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Contact with objects and equipment: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Event or exposure", 
+                      "Contact with objects and equipment", 
+                      by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Contact with objects and equipment: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_scatterplot(df, "Event or exposure", 
+                          "Contact with objects and equipment", 
+                          by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Contact with objects and equipment: Struck by object or equipment: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Event or exposure", 
+                      "Contact with objects and equipment", 
+                      "Struck by object or equipment",
+                      by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Contact with objects and equipment: Struck by object or equipment: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Event or exposure", 
+                      "Contact with objects and equipment", 
+                      "Struck by object or equipment", 
+                      by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Contact with objects and equipment: Struck by object or equipment: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_scatterplot(df, "Event or exposure", 
+                          "Contact with objects and equipment", 
+                          "Struck by object or equipment",
+                          by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Event or exposure: Top-3 Subcategory Characteristics: Annual Fatalities (faceted by Characteristic)
+
+```{r}
+p <- plot_bar_char(df, top3[['Event or exposure']]) + 
+  theme(axis.text.x = element_text(angle = 90))
+ggplotly(p)
+```
+
+
+Nature
+=======================================================================
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Nature: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_barplot(df, "Nature", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Nature: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_barplot(df, "Nature", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Nature: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Nature", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Nature: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Nature", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Other traumatic injuries and disorders: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Nature", "Other traumatic injuries and disorders", 
+                      by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Other traumatic injuries and disorders: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Nature", "Other traumatic injuries and disorders", 
+                      by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Nature: Top-3 Subcategory Characteristics: Annual Fatalities (faceted by Characteristic)
+
+```{r}
+p <- plot_bar_char(df, top3[['Nature']]) + 
+  theme(axis.text.x = element_text(angle = 90))
+ggplotly(p)
+```
+
+
+Primary source
+=======================================================================
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Primary source: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_barplot(df, "Primary source", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Primary source: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_barplot(df, "Primary source", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Primary source: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Primary source", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Primary source: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Primary source", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Vehicles: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Primary source", "Vehicles", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Vehicles: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Primary source", "Vehicles", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Vehicles: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_scatterplot(df, "Primary source", "Vehicles", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Vehicles: Highway vehicles, motorized: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Primary source", "Vehicles", 
+                      "Highway vehicles, motorized", 
+                      by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Vehicles: Highway vehicles, motorized: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Primary source", "Vehicles", 
+                      "Highway vehicles, motorized", 
+                      by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Vehicles: Highway vehicles, motorized: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_scatterplot(df, "Primary source", "Vehicles", 
+                          "Highway vehicles, motorized", 
+                          by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Persons, plants, animals, and minerals: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Primary source", 
+                      "Persons, plants, animals, and minerals", 
+                      by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Persons, plants, animals, and minerals: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Primary source", 
+                      "Persons, plants, animals, and minerals", 
+                      by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Persons, plants, animals, and minerals: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_scatterplot(df, "Primary source", 
+                          "Persons, plants, animals, and minerals", 
+                          by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Primary source: Top-3 Subcategory Characteristics: Annual Fatalities (faceted by Characteristic)
+
+```{r}
+p <- plot_bar_char(df, top3[['Primary source']]) + 
+  theme(axis.text.x = element_text(angle = 90))
+ggplotly(p)
+```
+
+
+Secondary source
+=======================================================================
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Secondary source: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_barplot(df, "Secondary source", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Secondary source: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_barplot(df, "Secondary source", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Secondary source: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Secondary source", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Secondary source: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Secondary source", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Secondary source: Top-3 Subcategory Characteristics: Annual Fatalities (faceted by Characteristic)
+
+```{r}
+p <- plot_bar_char(df, top3[['Secondary source']]) + 
+  theme(axis.text.x = element_text(angle = 90))
+ggplotly(p)
+```
+
+
+Worker activity
+=======================================================================
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Worker activity: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_barplot(df, "Worker activity", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Worker activity: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_barplot(df, "Worker activity", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Worker activity: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Worker activity", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Worker activity: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Worker activity", by = "Year"))
+```
+
+
+Part of body
+=======================================================================
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Part of body: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_barplot(df, "Part of body", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Part of body: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_barplot(df, "Part of body", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Part of body: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Part of body", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Part of body: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Part of body", by = "Year"))
+```
+
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Part of body: Top-3 Subcategory Characteristics: Annual Fatalities (faceted by Characteristic)
+
+```{r}
+p <- plot_bar_char(df, top3[['Part of body']]) + 
+  theme(axis.text.x = element_text(angle = 90))
+ggplotly(p)
+```
+
+
+Location
+=======================================================================
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Location: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_barplot(df, "Location", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Location: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_barplot(df, "Location", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Location: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Location", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Location: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Location", by = "Year"))
+```
+
+
+Occupation
+=======================================================================
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Occupation: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_barplot(df, "Occupation", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Occupation: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_barplot(df, "Occupation", by = "Year"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Occupation: Annual Fatalities (faceted by State)
+
+```{r}
+ggplotly(make_boxplot(df, "Occupation", by = "State"))
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### Occupation: Fatalities per State (faceted by Year)
+
+```{r}
+ggplotly(make_boxplot(df, "Occupation", by = "Year"))
+```
+
