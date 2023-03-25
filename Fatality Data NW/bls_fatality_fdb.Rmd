@@ -44,7 +44,12 @@ naics <- naics %>%
          level_4 = ifelse(level == 4, name, NA),
          level_5 = ifelse(level == 5, name, NA),
          level_6 = ifelse(level == 6, name, NA)) %>% 
-  fill(starts_with("level_"))
+  fill(starts_with("level_")) %>% select(c(-level_1)) %>%
+  mutate(level_2 = ifelse(code == "3117XX", "Manufacturing", level_2),
+         level_3 = ifelse(code == "3117XX", "Food Manufacturing", level_3),
+         level_4 = ifelse(code == "3117XX", name, level_4),
+         level_5 = ifelse(code == "3117XX", NA, level_5),
+         level_6 = ifelse(code == "3117XX", NA, level_6))
 
 # Find level-1 Characteristics
 Char_1 <- df %>% filter(!is.na(Char_2), is.na(Char_3)) %>% pull(Char_1) %>% 
