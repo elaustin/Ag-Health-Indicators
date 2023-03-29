@@ -30,14 +30,16 @@ rds_file <- here(data_dir, 'long-bls-fatal-aff-11-21.rds')
 csv_file <- here(data_dir, 'long-bls-fatal-aff-11-21.csv')
 if (file.exists(rds_file)) {
   df <- readRDS(rds_file)
+  df = df[df$Fatalities>0,]
 } else {
   df <- read_csv(csv_file)
+  df = df[df$Fatalities>0,]
   saveRDS(df, rds_file)
 }
 
-# Find level-1 Characteristics
-Char_1 <- df %>% filter(!is.na(Char_2), is.na(Char_3)) %>% pull(Char_1) %>% 
-  unique()
+# # Find level-1 Characteristics
+# Char_1 <- df %>% pull(!is.na(Char_2), is.na(Char_3)) %>% pull(Char_1) %>% 
+#   unique()
 
 # Read NAICS codes and set levels based on presence of digits
 naics <- read_csv(here(data_dir, "ind_codes.csv") )
@@ -65,17 +67,33 @@ naics <- naics %>%
   group_by(code2) %>%  
   fill( level_2)
 
+charvals = df %>% select(Char_1, Char_2, Char_3, Char_4, Char_5) %>% distinct()
+#charvals$Char = "Total"
+
 
 
 # Find level-1 Characteristics
 Char_1 <- df %>% filter(!is.na(Char_2), is.na(Char_3)) %>% pull(Char_1) %>% 
   unique()
 
+df = merge(df, naics, by= "code")
+
 
 ```
 
 
 ```{r, include = FALSE}
+
+
+#make intergers for plot axes
+integer_breaks <- function(n = 5, ...) {
+  fxn <- function(x) {
+    breaks <- floor(pretty(x, n, ...))
+    names(breaks) <- attr(breaks, "labels")
+    breaks
+  }
+  return(fxn)
+}
 # Define a function to make a generic ggplot object without any geoms
 make_ggplot <- function(df, x_label, by = 'State', wrap_width = 50, 
                         color = FALSE) {
@@ -253,6 +271,11 @@ sliderInput("year", "Year:",
 selectInput('state', 'State', choices = unique(df$State), 
             selected = c("Washington"),  multiple = FALSE)
 
+treecheckInput(
+    inputId = "char",
+    label = "Choose specific injury characteristics:",
+    choices = make_tree(
+     data = charvals, levels = c( "Char_1", "Char_2", "Char_3") ))
 
 ```
 
@@ -268,32 +291,62 @@ total_fatalities <- reactive ({
   mydata = copy(df)
   
   mycode = naics %>% 
-    filter(name  == input$naicsval) %>%
+    filter(name %in% input$naicsval) %>%
     select(code)
   mycode = mycode$code
     
-  df_total <- df %>% 
-  filter( State %in% input$state, code %in% mycode) %>%
-  group_by(Year, State) %>% 
+  df_total <- mydata %>% 
+  filter( State %in% input$state, 
+          code %in% mycode,
+          Char_3 %in% input$char |
+          Char_2 %in% input$char |
+          Char_1 %in% input$char) %>%
+    
+  group_by(Year, State,level ,name , Char_1, Char_2, Char_3) %>% 
   summarize(Fatalities = sum(Fatalities, na.rm = TRUE), .groups= "drop") %>%
-  filter(Fatalities != 0) %>% arrange(State, Year, Fatalities)
+  filter(Fatalities != 0) %>% arrange(State, Year, level, name,Fatalities, )
   
+  df_total = df_total %>% 
+    mutate(Characteristic = ifelse(is.na(Char_3), 
+                                   ifelse(is.na(Char_2), Char_1, Char_2), 
+                                   Char_3))
+  minval= min(df_total$level)
+  df_total = df_total[df_total$level == minval,]
+  df_total= df_total %>% select_if(~sum(!is.na(.)) > 0)
+  df_total = df_total  %>% drop_na() 
   df_total
   })
 
 
-renderPlot({
+renderPlotly({
   
   plotdata = NULL
   try({
   plotdata = (total_fatalities())}, silent = T)
+  
+  print(input$char)
+  print(input$naicsval)
+  print(plotdata)
+  
+  if(nrow(plotdata) >1 & length(input$naicsval) > 0 & length(input$char) > 0){
+ p <- ggplot(plotdata, aes(x = Year, y = Fatalities, 
+                           color = Characteristic)) + 
+   geom_point() + 
+    facet_wrap("State", nrow = 1) + 
+   geom_smooth(se = F) + 
+   labs(color="Sub-Groups") +
+   scale_x_continuous(breaks = integer_breaks()) + 
+    scale_y_continuous(breaks = integer_breaks(), 
+                       limits = c(0, max(plotdata$Fatalities,na.rm=T)+5)) +
+   ggtitle(unique(plotdata$name))
+   
     
+  ggplotly(p)
+  } else if (length(input$naicsval) == 0)
+    ggplot()+ggtitle("Please use the menu to select an industy group. Use the > symbol to navigate through levels.")
+  else ggplot()+ggtitle("No data exists for the combination of variables you selected. Please modify your selection.")
   
-  if(!is.null(nrow(plotdata))){
- ggplot(plotdata, aes(x = Year, y = Fatalities)) + geom_point() + 
-    facet_wrap("State", nrow = 1) + geom_smooth()
-  }
-  
+
 })
 
 
