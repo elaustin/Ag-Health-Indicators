@@ -198,9 +198,21 @@ summarise(Fatalities = sum(Fatalities, na.rm = TRUE)) %>%
 filter(Fatalities != 0) %>% arrange(desc(Fatalities), Char_1, Char_2, Char_3) %>%
 head(15)
 
-# Top-3 Level-3 Characteristics per Category
+# Top-3 GP2AFH Level-3 Characteristics per Category
 cats <- unique(df$Char_1)
-top3 <- map(cats, ~ df %>% filter(Char_1 == .x, !is.na(Char_2), 
+top3 <- map(cats, ~ df %>% filter(code == "GP2AFH") %>% 
+              filter(Char_1 == .x, !is.na(Char_2), 
+                                  !is.na(Char_3), is.na(Char_4)) %>%
+              group_by(Characteristic) %>% 
+              summarise(Fatalities = sum(Fatalities, na.rm = TRUE), 
+                        .groups = "drop") %>% 
+              arrange(desc(Fatalities)) %>% head(3) %>% 
+              pull(Characteristic)) %>% setNames(cats)
+
+# Top-3 3117XX Level-3 Characteristics per Category
+cats <- unique(df$Char_1)
+top3_3117XX <- map(cats, ~ df %>% filter(code == "3117XX") %>% 
+              filter(Char_1 == .x, !is.na(Char_2), 
                                   !is.na(Char_3), is.na(Char_4)) %>%
               group_by(Characteristic) %>% 
               summarise(Fatalities = sum(Fatalities, na.rm = TRUE), 
@@ -704,6 +716,17 @@ ggplotly(p)
 Row {data-height=550}
 -----------------------------------------------------------------------
 
+### 3117XX Event or exposure: Top-3 Subcategory Characteristics: Annual Fatalities (faceted by Characteristic)
+
+```{r}
+p <- plot_bar_char(df_3117XX, top3_3117XX[['Event or exposure']]) + 
+  theme(axis.text.x = element_text(angle = 90))
+ggplotly(p)
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
 ### 3117XX Event or exposure: Annual Fatalities (faceted by State)
 
 ```{r}
@@ -778,6 +801,17 @@ Row {data-height=550}
 
 ```{r}
 p <- plot_bar_char(df, top3[['Nature']]) + 
+  theme(axis.text.x = element_text(angle = 90))
+ggplotly(p)
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### 3117XX Nature: Top-3 Subcategory Characteristics: Annual Fatalities (faceted by Characteristic)
+
+```{r}
+p <- plot_bar_char(df_3117XX, top3_3117XX[['Nature']]) + 
   theme(axis.text.x = element_text(angle = 90))
 ggplotly(p)
 ```
@@ -939,6 +973,17 @@ ggplotly(p)
 Row {data-height=550}
 -----------------------------------------------------------------------
 
+### 3117XX Primary source: Top-3 Subcategory Characteristics: Annual Fatalities (faceted by Characteristic)
+
+```{r}
+p <- plot_bar_char(df_3117XX, top3_3117XX[['Primary source']]) + 
+  theme(axis.text.x = element_text(angle = 90))
+ggplotly(p)
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
 ### 3117XX Primary source: Annual Fatalities (faceted by State)
 
 ```{r}
@@ -993,6 +1038,17 @@ Row {data-height=550}
 
 ```{r}
 p <- plot_bar_char(df, top3[['Secondary source']]) + 
+  theme(axis.text.x = element_text(angle = 90))
+ggplotly(p)
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+### 3117XX Secondary source: Top-3 Subcategory Characteristics: Annual Fatalities (faceted by Characteristic)
+
+```{r}
+p <- plot_bar_char(df_3117XX, top3_3117XX[['Secondary source']]) + 
   theme(axis.text.x = element_text(angle = 90))
 ggplotly(p)
 ```
