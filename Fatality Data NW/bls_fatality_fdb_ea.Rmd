@@ -332,7 +332,7 @@ renderPlotly({
   print(input$naicsval)
   print(plotdata)
   
-  if(nrow(plotdata) >1 & length(input$naicsval) > 0 & length(input$char) > 0){
+  if(nrow(plotdata) > 0 & length(input$naicsval) > 0 & length(input$char) > 0){
  p <- ggplot(plotdata, aes(x = Year, y = Fatalities, 
                            color = Characteristic)) + 
    geom_point() + 
