@@ -1,11 +1,11 @@
 ---
-title: "US BLS Worker Fatalities: Agriculture, Forestry, Fishing and Hunting (GP2AFH) Industry: PNW States (AK, ID, OR, and WA), 2011-2021"
+title: "US BLS Agricultural Worker Fatalities: PNW States"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
     social: menu
     theme: readable
-    vertical_layout: scroll
+    vertical_layout: scroll 
 editor_options: 
   chunk_output_type: console
 runtime: shiny
