@@ -172,5 +172,6 @@ df_long <- df_merged %>%
   pivot_longer(cols = c(`2011`:`2021`), 
                names_to = 'Year', values_to = 'Fatalities') %>%
   rename("State" = "state_name") %>%
-  filter(Char_1 == 'Total' | !is.na(Char_2))
+  filter(Char_1 == 'Total' | !is.na(Char_2)) %>% 
+  filter(Fatalities > 0, !is.na(Fatalities))
 write_csv(df_long, here(data_dir, paste0("long-", output_file_name)))

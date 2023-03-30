@@ -30,10 +30,10 @@ rds_file <- here(data_dir, 'long-bls-fatal-aff-11-21.rds')
 csv_file <- here(data_dir, 'long-bls-fatal-aff-11-21.csv')
 if (file.exists(rds_file)) {
   df <- readRDS(rds_file)
-  df = df[df$Fatalities>0,]
+  df = df[df$Fatalities>0 & !is.na(df$Fatalities),]
 } else {
   df <- read_csv(csv_file)
-  df = df[df$Fatalities>0,]
+  df = df[df$Fatalities>0 & !is.na(df$Fatalities),]
   saveRDS(df, rds_file)
 }
 
@@ -52,16 +52,20 @@ naics = naics %>%
 naics = naics  %>% 
   mutate(code2 = ifelse(code2 == "GP", 11, code2))
 
-# Created nested structure using level
+# Create nested structure using level
 naics <- naics %>% 
-  group_by(code3) %>% 
   mutate(level_1 = ifelse(level == 1, name, NA),
          level_2 = ifelse(level == 2, name, NA),
          level_3 = ifelse(level == 3, name, NA),
          level_4 = ifelse(level == 4, name, NA),
          level_5 = ifelse(level == 5, name, NA),
          level_6 = ifelse(level == 6, name, NA)) %>% 
-  fill(starts_with("level_") )
+  fill(starts_with("level_")) %>% select(c(-level_1)) %>%
+  mutate(level_2 = ifelse(code == "3117XX", "Manufacturing", level_2),
+         level_3 = ifelse(code == "3117XX", "Food Manufacturing", level_3),
+         level_4 = ifelse(code == "3117XX", name, level_4),
+         level_5 = ifelse(code == "3117XX", NA, level_5),
+         level_6 = ifelse(code == "3117XX", NA, level_6))
 
 naics <- naics %>% 
   group_by(code2) %>%  
