@@ -30,10 +30,10 @@ rds_file <- here(data_dir, 'long-bls-fatal-aff-11-21.rds')
 csv_file <- here(data_dir, 'long-bls-fatal-aff-11-21.csv')
 if (file.exists(rds_file)) {
   df <- readRDS(rds_file)
-  df = df[df$Fatalities>0,]
+  df = df[df$Fatalities>0 & !is.na(df$Fatalities),]
 } else {
   df <- read_csv(csv_file)
-  df = df[df$Fatalities>0,]
+  df = df[df$Fatalities>0 & !is.na(df$Fatalities),]
   saveRDS(df, rds_file)
 }
 
