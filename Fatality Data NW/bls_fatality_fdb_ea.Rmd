@@ -301,14 +301,14 @@ total_fatalities <- reactive ({
     
   df_total <- mydata %>% 
   filter( State %in% input$state, 
-          code %in% mycode,
+          code %in% mycode, is.na(Char_4),
           Char_3 %in% input$char |
           Char_2 %in% input$char |
           Char_1 %in% input$char) %>%
     
   group_by(Year, State,level ,name , Char_1, Char_2, Char_3) %>% 
   summarize(Fatalities = sum(Fatalities, na.rm = TRUE), .groups= "drop") %>%
-  filter(Fatalities != 0) %>% arrange(State, Year, level, name,Fatalities, )
+  filter(Fatalities != 0) %>% arrange(State, Year, level, name,Fatalities)
   
   df_total = df_total %>% 
     mutate(Characteristic = ifelse(is.na(Char_3), 
