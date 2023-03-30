@@ -36,7 +36,7 @@ naics <- read_csv(here(data_dir, "ind_codes.csv") )
 naics <- naics %>% mutate(level = str_count(code, '\\d')) %>%
   mutate(level = ifelse(code %in% c("GP2AFH"), 2, level))
 
-# Created nested structure using level
+# Create nested structure using level
 naics <- naics %>% 
   mutate(level_1 = ifelse(level == 1, name, NA),
          level_2 = ifelse(level == 2, name, NA),
