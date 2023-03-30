@@ -401,11 +401,10 @@ ggplotly(make_scatterplot(df, "Employee status", by = "Year"))
 Row {data-height=550}
 -----------------------------------------------------------------------
 
-### 3117XX Employee status: Annual Fatalities (faceted by State)
+### 3117XX Employee status: Annual Fatalities (faceted by Year)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX %>% mutate(Year = as.character(Year)), 
-                      "Employee status"))
+ggplotly(make_scatterplot(df_3117XX, "Employee status", by = "Year"))
 ```
 
 
@@ -428,16 +427,6 @@ Row {data-height=300}
 
 ```{r}
 ggplotly(make_scatterplot(df, "Gender", by = "Year"))
-```
-
-Row {data-height=550}
------------------------------------------------------------------------
-
-### 3117XX Gender: Annual Fatalities (faceted by State)
-
-```{r}
-ggplotly(make_barplot(df_3117XX %>% mutate(Year = as.character(Year)), 
-                      "Gender"))
 ```
 
 
@@ -483,11 +472,10 @@ ggplotly(make_boxplot(df, "Age", by = "Year"))
 Row {data-height=550}
 -----------------------------------------------------------------------
 
-### 3117XX Age: Annual Fatalities (faceted by State)
+### 3117XX Age: Annual Fatalities (faceted by Year)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX %>% mutate(Year = as.character(Year)), 
-                      "Age"))
+ggplotly(make_scatterplot(df_3117XX, "Employee status", by = "Year"))
 ```
 
 
