@@ -24,9 +24,9 @@ data_dir <- here("Fatality Data NW")
 rds_file <- here(data_dir, 'long-bls-fatal-aff-11-21.rds')
 csv_file <- here(data_dir, 'long-bls-fatal-aff-11-21.csv')
 if (file.exists(rds_file)) {
-  df <- readRDS(rds_file)
+  df <- readRDS(rds_file) %>% mutate(Year = as.character(Year))
 } else {
-  df <- read_csv(csv_file)
+  df <- read_csv(csv_file) %>% mutate(Year = as.character(Year))
   saveRDS(df, rds_file)
 }
 
@@ -133,6 +133,7 @@ make_boxplot <- function(df, Char_1, Char_2 = NULL, Char_3 = NULL, by = 'State',
 make_scatterplot <- function(df, Char_1, Char_2 = NULL, Char_3 = NULL, 
                              by = 'State', wrap_width = 50, color = TRUE, 
                              nrow = NULL, FUN = NULL) {
+  if (by == "State") df$Year = as.numeric(df$Year)
   if (is.null(nrow)) nrow <- ifelse(by == "Year", 2, 1)
   if (is.null(FUN)) {
     FUN = case_when(
@@ -166,8 +167,9 @@ make_barplot <- function(df, Char_1, Char_2 = NULL, Char_3 = NULL,
   arg <- list(df = df, Char1 = Char_1, Char2 = Char_2, Char3 = Char_3, by = by,
               wrap_width = wrap_width, color = color)
   flip <- if (by == "Year") coord_flip()
+  angle <- if (by == "State") theme(axis.text.x = element_text(angle = 90))
   fill_color <- ifelse(by == "Year", "State", "Year")
-  do.call(FUN, arg) + geom_col() + facet_wrap(by, nrow = nrow) + flip
+  do.call(FUN, arg) + geom_col() + facet_wrap(by, nrow = nrow) + flip + angle
 }
 
 plot_bar_char <- function(df, Char, nrow = 1, wrap_width = 60) {
@@ -232,7 +234,8 @@ df_total <- df %>%
   filter(Char_1 == "Total") %>%
   group_by(Year, State) %>% 
   summarize(Fatalities = sum(Fatalities, na.rm = TRUE), .groups= "drop") %>%
-  filter(Fatalities != 0) %>% arrange(State, Year, Fatalities)
+  filter(Fatalities != 0) %>% arrange(State, Year, Fatalities) %>%
+  mutate(Year = as.numeric(Year))
 ```
 
 ### Annual Fatalities (faceted by State)
@@ -718,8 +721,7 @@ Row {data-height=550}
 ### 3117XX Event or exposure: Annual Fatalities (faceted by State)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX %>% mutate(Year = as.character(Year)), 
-                      "Event or exposure"))
+ggplotly(make_barplot(df_3117XX, "Event or exposure"))
 ```
 
 
@@ -810,8 +812,7 @@ Row {data-height=550}
 ### 3117XX Nature: Annual Fatalities (faceted by State)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX %>% mutate(Year = as.character(Year)), 
-                      "Nature"))
+ggplotly(make_barplot(df_3117XX, "Nature"))
 ```
 
 
@@ -975,8 +976,7 @@ Row {data-height=550}
 ### 3117XX Primary source: Annual Fatalities (faceted by State)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX %>% mutate(Year = as.character(Year)), 
-                      "Primary source"))
+ggplotly(make_barplot(df_3117XX, "Primary source"))
 ```
 
 
@@ -1047,8 +1047,7 @@ Row {data-height=550}
 ### 3117XX Secondary source: Annual Fatalities (faceted by State)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX %>% mutate(Year = as.character(Year)), 
-                      "Secondary source"))
+ggplotly(make_barplot(df_3117XX, "Secondary source"))
 ```
 
 
@@ -1097,8 +1096,7 @@ Row {data-height=550}
 ### 3117XX Worker activity: Annual Fatalities (faceted by State)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX %>% mutate(Year = as.character(Year)), 
-                      "Worker activity"))
+ggplotly(make_barplot(df_3117XX, "Worker activity"))
 ```
 
 
@@ -1159,8 +1157,7 @@ Row {data-height=550}
 ### 3117XX Part of body: Annual Fatalities (faceted by State)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX %>% mutate(Year = as.character(Year)), 
-                      "Part of body"))
+ggplotly(make_barplot(df_3117XX, "Part of body"))
 ```
 
 
@@ -1209,8 +1206,7 @@ Row {data-height=550}
 ### 3117XX Location: Annual Fatalities (faceted by State)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX %>% mutate(Year = as.character(Year)), 
-                      "Location"))
+ggplotly(make_barplot(df_3117XX, "Location"))
 ```
 
 
@@ -1259,6 +1255,5 @@ Row {data-height=550}
 ### 3117XX Occupation: Annual Fatalities (faceted by State)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX %>% mutate(Year = as.character(Year)), 
-                      "Occupation"))
+ggplotly(make_barplot(df_3117XX, "Occupation"))
 ```
