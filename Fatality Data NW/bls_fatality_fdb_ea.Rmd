@@ -320,30 +320,33 @@ Column {.tabset}
 total_fatalities <- reactive ({
   mydata = copy(df)
   
-  mycode = naics %>% 
-    filter(name %in% input$naicsval) %>%
-    select(code)
+  mycode = naics %>% filter(name %in% input$naicsval) %>% select(code)
   mycode = mycode$code
-    
-  df_total <- mydata %>%
-  filter(State %in% input$state, code %in% mycode, is.na(Char_4),
-         Char_1 %in% input$char |
-           Char_2 %in% input$char |
-           Char_3 %in% input$char) %>%
-    #mutate(across(starts_with("Char_"), ~ str_remove(.x, " \\([12]°\\)"))) %>% 
-    
-  group_by(Year, State, level, name, Char_1, Char_2, Char_3) %>% 
-  summarize(Fatalities = sum(Fatalities, na.rm = TRUE), .groups= "drop") %>%
-  filter(Fatalities != 0) %>% arrange(State, Year, level, name, Fatalities)
   
-  df_total = df_total %>% 
-    mutate(Characteristic = ifelse(is.na(Char_3), 
-                                   ifelse(is.na(Char_2), Char_1, Char_2), 
+  df_total <- mydata %>%
+    filter(
+      State %in% input$state,
+      code %in% mycode,
+      is.na(Char_4),
+      Char_1 %in% input$char |
+        Char_2 %in% input$char |
+        Char_3 %in% input$char
+    ) %>%
+    #mutate(across(starts_with("Char_"), ~ str_remove(.x, " \\([12]°\\)"))) %>%
+    
+    group_by(Year, State, level, name, Char_1, Char_2, Char_3) %>%
+    summarize(Fatalities = sum(Fatalities, na.rm = TRUE),
+              .groups = "drop") %>%
+    filter(Fatalities != 0) %>% arrange(State, Year, level, name, Fatalities)
+  
+  df_total = df_total %>%
+    mutate(Characteristic = ifelse(is.na(Char_3),
+                                   ifelse(is.na(Char_2), Char_1, Char_2),
                                    Char_3))
   
-  minval= min(df_total$level)
-  df_total = df_total[df_total$level == minval,]
-  df_total= df_total %>% select_if(~sum(!is.na(.)) > 0)
+  minval = min(df_total$level)
+  df_total = df_total[df_total$level == minval, ]
+  df_total = df_total %>% select_if( ~ sum(!is.na(.)) > 0)
   df_total = df_total %>% drop_na(Fatalities)
   df_total
   })
@@ -359,45 +362,48 @@ renderPlotly({
   print(input$naicsval)
   print(plotdata)
   
-  if(nrow(plotdata) > 0 & 
-     length(unlist(input$naicsval)) > 0 & 
-     length(unlist(input$char)) > 0){
+  if (nrow(plotdata) > 0 &
+      length(unlist(input$naicsval)) > 0 &
+      length(unlist(input$char)) > 0) {
     
+    p <- ggplot(plotdata, aes(x = Year, y = Fatalities,
+                              color = Characteristic)) +
+      geom_jitter(width = 0.2, height = 0.2) +
+      facet_wrap("State", nrow = 1) +
+      geom_smooth(se = F) +
+      labs(color = "Sub-Groups") +
+      scale_x_continuous(breaks = integer_breaks()) +
+      scale_y_continuous(breaks = integer_breaks(),
+                         limits = c(0, max(plotdata$Fatalities, na.rm = T) +
+                                      5)) +
+      ggtitle(wrapper(paste(unlist(unique(plotdata$name)), 
+                            collapse = "|"), width = 50))
     
+    ggplotly(p)
     
- p <- ggplot(plotdata, aes(x = Year, y = Fatalities, 
-                           color = Characteristic)) + 
-   geom_jitter(width=0.2, height=0.2) +
-    facet_wrap("State", nrow = 1) + 
-   geom_smooth(se = F) + 
-   labs(color="Sub-Groups") +
-   scale_x_continuous(breaks = integer_breaks()) + 
-    scale_y_continuous(breaks = integer_breaks(), 
-                       limits = c(0, max(plotdata$Fatalities,na.rm=T)+5)) +
-   ggtitle(wrapper(paste(unlist(unique(plotdata$name)), 
-                         collapse = "|"),width = 50))
-   
+  } else if (length(unlist(input$naicsval)) == 0) {
     
-  ggplotly(p)
-  } else if (length(unlist(input$naicsval)) == 0)
-  {
     p1 = ggplot() +                      # Draw ggplot2 plot with text only
-  annotate("text",
-           x = 1,
-           y = 1,
-           size = 4,
-           label = "Please use the menu to select an industy group. \nUse the > symbol to navigate through levels.") +   theme_void()
-    ggplotly(p1)%>% config(displayModeBar = F)%>% layout(grid = NULL)
+      annotate("text", x = 1, y = 1, size = 4, 
+        label = paste(
+          "Please use the menu to select an industy group.", 
+          "Use the > symbol to navigate through levels.", sep = "\n")
+      ) + theme_void()
+    
+    ggplotly(p1) %>% config(displayModeBar = F) %>% layout(grid = NULL)
+    
+  } else {
+    
+    # Draw ggplot2 plot with text only
+    p2 = ggplot() + 
+      annotate("text", x = 1, y = 1, size = 2,
+        label = paste(
+          "No data exists for the combination of variables you selected.", 
+          "Please modify your selection.", sep = "\n")
+    ) + theme_void()
+    
+    ggplotly(p2) %>% config(displayModeBar = F) %>% layout(grid = NULL)
   }
-  else 
-    {# Draw ggplot2 plot with text only
- p2= ggplot() + annotate("text",
-           x = 1,
-           y = 1,
-           size = 2,
-           label = "No data exists for the combination of variables you selected. \nPlease modify your selection." ) +   theme_void()
-  ggplotly(p2)%>% config(displayModeBar = F)%>% layout(grid = NULL)
-    }
 
 })
 
