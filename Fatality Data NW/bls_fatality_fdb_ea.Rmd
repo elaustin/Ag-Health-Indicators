@@ -62,7 +62,8 @@ naics <- naics %>%
          level_5 = ifelse(level == 5, name, NA),
          level_6 = ifelse(level == 6, name, NA)) %>%
   fill(num_range("level_",1:3)) %>% select(c(-level_1)) %>%
-  mutate(level_2 = ifelse(code == "3117XX", "Agriculture, forestry, fishing and hunting", level_2),
+  mutate(level_2 = ifelse(code == "3117XX", 
+                          "Agriculture, forestry, fishing and hunting", level_2),
          level_3 = ifelse(code == "3117XX", "Food Manufacturing", level_3),
          level_4 = ifelse(code == "3117XX", name, level_4),
          level_5 = ifelse(code == "3117XX", NA, level_5),
