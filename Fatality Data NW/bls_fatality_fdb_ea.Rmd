@@ -72,6 +72,24 @@ naics <- naics %>%
   group_by(code2) %>%  
   fill( level_2)
 
+df <- df %>% 
+  mutate(Char_2 = ifelse(!is.na(Char_2) & Char_1 == "Primary source", 
+                         paste(Char_2, "(1°)"), Char_2),
+         Char_3 = ifelse(!is.na(Char_3) & Char_1 == "Primary source", 
+                         paste(Char_3, "(1°)"), Char_3),
+         Char_4 = ifelse(!is.na(Char_4) & Char_1 == "Primary source", 
+                         paste(Char_4, "(1°)"), Char_4),
+         Char_5 = ifelse(!is.na(Char_5) & Char_1 == "Primary source", 
+                         paste(Char_5, "(1°)"), Char_5),
+         Char_2 = ifelse(!is.na(Char_2) & Char_1 == "Secondary source", 
+                         paste(Char_2, "(2°)"), Char_2),
+         Char_3 = ifelse(!is.na(Char_3) & Char_1 == "Secondary source", 
+                         paste(Char_3, "(2°)"), Char_3),
+         Char_4 = ifelse(!is.na(Char_4) & Char_1 == "Secondary source", 
+                         paste(Char_4, "(2°)"), Char_4),
+         Char_5 = ifelse(!is.na(Char_5) & Char_1 == "Secondary source", 
+                         paste(Char_5, "(2°)"), Char_5))
+
 charvals = df %>% 
   select(Char_1, Char_2, Char_3, Char_4, Char_5) %>% unique()
 
@@ -312,6 +330,7 @@ total_fatalities <- reactive ({
          Char_1 %in% input$char |
            Char_2 %in% input$char |
            Char_3 %in% input$char) %>%
+    mutate(across(starts_with("Char_"), ~ str_remove(.x, " \\([12]°\\)"))) %>% 
     
   group_by(Year, State, level, name, Char_1, Char_2, Char_3) %>% 
   summarize(Fatalities = sum(Fatalities, na.rm = TRUE), .groups= "drop") %>%
