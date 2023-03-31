@@ -344,7 +344,7 @@ total_fatalities <- reactive ({
   minval= min(df_total$level)
   df_total = df_total[df_total$level == minval,]
   df_total= df_total %>% select_if(~sum(!is.na(.)) > 0)
-  df_total = df_total  %>% drop_na() 
+  df_total = df_total  %>% drop_na(Fatalities) 
   df_total
   })
 
