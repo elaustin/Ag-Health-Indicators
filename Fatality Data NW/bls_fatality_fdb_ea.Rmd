@@ -330,7 +330,7 @@ total_fatalities <- reactive ({
          Char_1 %in% input$char |
            Char_2 %in% input$char |
            Char_3 %in% input$char) %>%
-    mutate(across(starts_with("Char_"), ~ str_remove(.x, " \\([12]°\\)"))) %>% 
+    #mutate(across(starts_with("Char_"), ~ str_remove(.x, " \\([12]°\\)"))) %>% 
     
   group_by(Year, State, level, name, Char_1, Char_2, Char_3) %>% 
   summarize(Fatalities = sum(Fatalities, na.rm = TRUE), .groups= "drop") %>%
