@@ -367,7 +367,7 @@ renderPlotly({
     
  p <- ggplot(plotdata, aes(x = Year, y = Fatalities, 
                            color = Characteristic)) + 
-   geom_point() + geom_jitter(width=0.2, height=0.2) +
+   geom_jitter(width=0.2, height=0.2) +
     facet_wrap("State", nrow = 1) + 
    geom_smooth(se = F) + 
    labs(color="Sub-Groups") +
