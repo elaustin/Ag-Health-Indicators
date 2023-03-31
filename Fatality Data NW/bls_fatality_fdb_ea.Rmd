@@ -16,8 +16,8 @@ runtime: shiny
 # Attach packages, installing as needed
 #about / fatalities/demographics/description of injury/table download
 if(!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
-pacman::p_load(here, readr, dplyr, tidyr, stringr, purrr, forcats,DT,data.table,
-               flexdashboard, ggplot2, plotly)
+pacman::p_load(here, readr, dplyr, tidyr, stringr, purrr, forcats, DT, 
+               data.table, flexdashboard, ggplot2, plotly, shiny)
 
 pacman::p_load_gh("dreamRs/shinytreeview")
 
@@ -71,14 +71,20 @@ naics <- naics %>%
   group_by(code2) %>%  
   fill( level_2)
 
-charvals = df %>% select(Char_1, Char_2, Char_3, Char_4, Char_5) %>% distinct()
-#charvals$Char = "Total"
-
-
-
-# Find level-1 Characteristics
-Char_1 <- df %>% filter(!is.na(Char_2), is.na(Char_3)) %>% pull(Char_1) %>% 
-  unique()
+charvals = df %>% 
+  select(Char_1, Char_2, Char_3, Char_4, Char_5) %>% unique() %>% 
+  mutate(Char_1_id = Char_1) %>%
+  mutate(Char_2_id = 
+           ifelse(!is.na(Char_2), paste(Char_1_id, Char_2, sep = ";"), NA)) %>%
+  mutate(Char_3_id = 
+           ifelse(!is.na(Char_3), paste(Char_2_id, Char_3, sep = ";"), NA)) %>%
+  mutate(Char_4_id = 
+           ifelse(!is.na(Char_4), paste(Char_3_id, Char_4, sep = ";"), NA)) %>%
+  mutate(Char_5_id = 
+           ifelse(!is.na(Char_5), paste(Char_4_id, Char_5, sep = ";"), NA)) 
+  
+df = df %>% merge(charvals, 
+                  by = c('Char_1', 'Char_2', 'Char_3', 'Char_4', 'Char_5'))
 
 df = merge(df, naics, by= "code")
 
@@ -266,11 +272,13 @@ treecheckInput(
     inputId = "naicsval",
     label = "Choose an Industry Group:",
     choices = make_tree(
-      data = naics, levels = c("level_2", "level_3", "level_4", "level_5","level_6") ))
+      data = naics, 
+      levels = c("level_2", "level_3", "level_4", "level_5","level_6") ))
     
 sliderInput("year", "Year:",
             min = min(df$Year, na.rm=T), sep = "",
-            max = max(df$Year, na.rm=T), value = c(min(df$Year, na.rm=T), max(df$Year, na.rm=T)))
+            max = max(df$Year, na.rm=T), value = c(min(df$Year, na.rm=T), 
+                                                   max(df$Year, na.rm=T)))
 
 selectInput('state', 'State', choices = unique(df$State), 
             selected = c("Washington"),  multiple = FALSE)
@@ -279,7 +287,10 @@ treecheckInput(
     inputId = "char",
     label = "Choose specific injury characteristics:",
     choices = make_tree(
-     data = charvals, levels = c( "Char_1", "Char_2", "Char_3") ))
+      data = charvals, 
+      levels = c("Char_1", "Char_2", "Char_3"),
+      levels_id = c("Char_1_id", "Char_2_id", "Char_3_id"),
+      return_value = "id"))
 
 ```
 
@@ -299,21 +310,21 @@ total_fatalities <- reactive ({
     select(code)
   mycode = mycode$code
     
-  df_total <- mydata %>% 
-  filter( State %in% input$state, 
-          code %in% mycode, is.na(Char_4),
-          Char_3 %in% input$char |
-          Char_2 %in% input$char |
-          Char_1 %in% input$char) %>%
+  df_total <- mydata %>%
+  filter(State %in% input$state, code %in% mycode, is.na(Char_4),
+         Char_1_id %in% input$char |
+           Char_2_id %in% input$char |
+           Char_3_id %in% input$char) %>%
     
-  group_by(Year, State,level ,name , Char_1, Char_2, Char_3) %>% 
+  group_by(Year, State, level, name, Char_1, Char_2, Char_3) %>% 
   summarize(Fatalities = sum(Fatalities, na.rm = TRUE), .groups= "drop") %>%
-  filter(Fatalities != 0) %>% arrange(State, Year, level, name,Fatalities)
+  filter(Fatalities != 0) %>% arrange(State, Year, level, name, Fatalities)
   
   df_total = df_total %>% 
     mutate(Characteristic = ifelse(is.na(Char_3), 
                                    ifelse(is.na(Char_2), Char_1, Char_2), 
                                    Char_3))
+  
   minval= min(df_total$level)
   df_total = df_total[df_total$level == minval,]
   df_total= df_total %>% select_if(~sum(!is.na(.)) > 0)
