@@ -401,13 +401,13 @@ Row {data-height=300}
 ggplotly(make_scatterplot(df, "Employee status", by = "Year"))
 ```
 
-Row {data-height=550}
+Row {data-height=300}
 -----------------------------------------------------------------------
 
 ### 3117XX Employee status: Annual Fatalities (faceted by Year)
 
 ```{r}
-ggplotly(make_scatterplot(df_3117XX, "Employee status", by = "Year"))
+ggplotly(make_scatterplot(df_3117XX, "Employee status", by = "Year"), width = 500)
 ```
 
 
@@ -472,13 +472,13 @@ Row {data-height=550}
 ggplotly(make_boxplot(df, "Age", by = "Year"))
 ```
 
-Row {data-height=550}
+Row {data-height=300}
 -----------------------------------------------------------------------
 
 ### 3117XX Age: Annual Fatalities (faceted by Year)
 
 ```{r}
-ggplotly(make_scatterplot(df_3117XX, "Employee status", by = "Year"))
+ggplotly(make_scatterplot(df_3117XX, "Age", by = "Year"), width = 500)
 ```
 
 
@@ -704,7 +704,7 @@ p <- plot_bar_char(df, top3[['Event or exposure']]) +
 ggplotly(p)
 ```
 
-Row {data-height=550}
+Row {data-height=300}
 -----------------------------------------------------------------------
 
 ### 3117XX Event or exposure: Top-3 Subcategory Characteristics: Annual Fatalities (faceted by Characteristic)
@@ -715,7 +715,7 @@ p <- plot_bar_char(df_3117XX, top3_3117XX[['Event or exposure']]) +
 ggplotly(p)
 ```
 
-Row {data-height=550}
+Row {data-height=300}
 -----------------------------------------------------------------------
 
 ### 3117XX Event or exposure: Annual Fatalities (faceted by State)
@@ -795,7 +795,7 @@ p <- plot_bar_char(df, top3[['Nature']]) +
 ggplotly(p)
 ```
 
-Row {data-height=550}
+Row {data-height=300}
 -----------------------------------------------------------------------
 
 ### 3117XX Nature: Top-3 Subcategory Characteristics: Annual Fatalities (faceted by Characteristic)
@@ -805,9 +805,6 @@ p <- plot_bar_char(df_3117XX, top3_3117XX[['Nature']]) +
   theme(axis.text.x = element_text(angle = 90))
 ggplotly(p)
 ```
-
-Row {data-height=550}
------------------------------------------------------------------------
 
 ### 3117XX Nature: Annual Fatalities (faceted by State)
 
@@ -959,7 +956,7 @@ p <- plot_bar_char(df, top3[['Primary source']]) +
 ggplotly(p)
 ```
 
-Row {data-height=550}
+Row {data-height=300}
 -----------------------------------------------------------------------
 
 ### 3117XX Primary source: Top-3 Subcategory Characteristics: Annual Fatalities (faceted by Characteristic)
@@ -969,9 +966,6 @@ p <- plot_bar_char(df_3117XX, top3_3117XX[['Primary source']]) +
   theme(axis.text.x = element_text(angle = 90))
 ggplotly(p)
 ```
-
-Row {data-height=550}
------------------------------------------------------------------------
 
 ### 3117XX Primary source: Annual Fatalities (faceted by State)
 
@@ -1030,7 +1024,7 @@ p <- plot_bar_char(df, top3[['Secondary source']]) +
 ggplotly(p)
 ```
 
-Row {data-height=550}
+Row {data-height=300}
 -----------------------------------------------------------------------
 
 ### 3117XX Secondary source: Top-3 Subcategory Characteristics: Annual Fatalities (faceted by Characteristic)
@@ -1040,9 +1034,6 @@ p <- plot_bar_char(df_3117XX, top3_3117XX[['Secondary source']]) +
   theme(axis.text.x = element_text(angle = 90))
 ggplotly(p)
 ```
-
-Row {data-height=550}
------------------------------------------------------------------------
 
 ### 3117XX Secondary source: Annual Fatalities (faceted by State)
 
@@ -1090,13 +1081,13 @@ Row {data-height=550}
 ggplotly(make_boxplot(df, "Worker activity", by = "Year"))
 ```
 
-Row {data-height=550}
+Row {data-height=300}
 -----------------------------------------------------------------------
 
 ### 3117XX Worker activity: Annual Fatalities (faceted by State)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX, "Worker activity"))
+ggplotly(make_barplot(df_3117XX, "Worker activity"), width = 700)
 ```
 
 
@@ -1151,13 +1142,13 @@ p <- plot_bar_char(df, top3[['Part of body']]) +
 ggplotly(p)
 ```
 
-Row {data-height=550}
+Row {data-height=300}
 -----------------------------------------------------------------------
 
 ### 3117XX Part of body: Annual Fatalities (faceted by State)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX, "Part of body"))
+ggplotly(make_barplot(df_3117XX, "Part of body"), width = 500)
 ```
 
 
@@ -1200,13 +1191,13 @@ Row {data-height=550}
 ggplotly(make_boxplot(df, "Location", by = "Year"))
 ```
 
-Row {data-height=550}
+Row {data-height=300}
 -----------------------------------------------------------------------
 
 ### 3117XX Location: Annual Fatalities (faceted by State)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX, "Location"))
+ggplotly(make_barplot(df_3117XX, "Location"), width = 500)
 ```
 
 
@@ -1249,11 +1240,11 @@ Row {data-height=550}
 ggplotly(make_boxplot(df, "Occupation", by = "Year"))
 ```
 
-Row {data-height=550}
+Row {data-height=300}
 -----------------------------------------------------------------------
 
 ### 3117XX Occupation: Annual Fatalities (faceted by State)
 
 ```{r}
-ggplotly(make_barplot(df_3117XX, "Occupation"))
+ggplotly(make_barplot(df_3117XX, "Occupation"), width = 700)
 ```
