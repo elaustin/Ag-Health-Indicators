@@ -344,7 +344,7 @@ total_fatalities <- reactive ({
   minval= min(df_total$level)
   df_total = df_total[df_total$level == minval,]
   df_total= df_total %>% select_if(~sum(!is.na(.)) > 0)
-  df_total = df_total  %>% drop_na(Fatalities) 
+  df_total = df_total %>% drop_na(Fatalities)
   df_total
   })
 
@@ -367,7 +367,7 @@ renderPlotly({
     
  p <- ggplot(plotdata, aes(x = Year, y = Fatalities, 
                            color = Characteristic)) + 
-   geom_point() + 
+   geom_point() + geom_jitter(width=0.2, height=0.2) +
     facet_wrap("State", nrow = 1) + 
    geom_smooth(se = F) + 
    labs(color="Sub-Groups") +
