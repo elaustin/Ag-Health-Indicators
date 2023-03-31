@@ -73,13 +73,24 @@ naics <- naics %>%
   fill( level_2)
 
 charvals = df %>% 
-  select(Char_1, Char_2, Char_3, Char_4, Char_5) %>% unique()
+  select(Char_1, Char_2, Char_3, Char_4, Char_5) %>% unique() %>% 
+  mutate(Char_1_id = Char_1) %>%
+  mutate(Char_2_id = 
+           ifelse(!is.na(Char_2), paste(Char_1_id, Char_2, sep = ";"), NA)) %>%
+  mutate(Char_3_id = 
+           ifelse(!is.na(Char_3), paste(Char_2_id, Char_3, sep = ";"), NA)) %>%
+  mutate(Char_4_id = 
+           ifelse(!is.na(Char_4), paste(Char_3_id, Char_4, sep = ";"), NA)) %>%
+  mutate(Char_5_id = 
+           ifelse(!is.na(Char_5), paste(Char_4_id, Char_5, sep = ";"), NA)) 
+  
+df = df %>% merge(charvals, 
+                  by = c('Char_1', 'Char_2', 'Char_3', 'Char_4', 'Char_5'))
 
 #only retain naics with data
 naics = naics[naics$code %in% df$code, ]
 
 df = merge(df, naics, by= "code")
-
 
 ```
 
@@ -287,7 +298,9 @@ treecheckInput(
     label = "Choose specific injury characteristics:",selected="Total",
     choices = make_tree(
       data = charvals, 
-      levels = c("Char_1", "Char_2", "Char_3")))
+      levels = c("Char_1", "Char_2", "Char_3"),
+      levels_id = c("Char_1_id", "Char_2_id", "Char_3_id"),
+      return_value = "id"))
 
 ```
 
@@ -308,10 +321,10 @@ total_fatalities <- reactive ({
   mycode = mycode$code
     
   df_total <- mydata %>%
-  filter(State %in% input$state, code %in% mycode, is.na(Char_4),
-         Char_1 %in% input$char |
-           Char_2 %in% input$char |
-           Char_3 %in% input$char) %>%
+    filter(State %in% input$state, code %in% mycode, is.na(Char_4),
+      Char_1_id %in% input$char |
+        Char_2_id %in% input$char |
+          Char_3_id %in% input$char) %>%
     
   group_by(Year, State, level, name, Char_1, Char_2, Char_3) %>% 
   summarize(Fatalities = sum(Fatalities, na.rm = TRUE), .groups= "drop") %>%
