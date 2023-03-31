@@ -53,15 +53,16 @@ naics = naics  %>%
   mutate(code2 = ifelse(code2 == "GP", 11, code2))
 
 # Create nested structure using level
+# Lower levels are not consistently provided and cannot be backfilled. 
 naics <- naics %>% 
   mutate(level_1 = ifelse(level == 1, name, NA),
          level_2 = ifelse(level == 2, name, NA),
-         level_3 = ifelse(level == 3, name, NA),
+         level_3 = ifelse(level == 3, name, NA), 
          level_4 = ifelse(level == 4, name, NA),
          level_5 = ifelse(level == 5, name, NA),
-         level_6 = ifelse(level == 6, name, NA)) %>% 
-  fill(starts_with("level_")) %>% select(c(-level_1)) %>%
-  mutate(level_2 = ifelse(code == "3117XX", "Manufacturing", level_2),
+         level_6 = ifelse(level == 6, name, NA)) %>%
+  fill(num_range("level_",1:3)) %>% select(c(-level_1)) %>%
+  mutate(level_2 = ifelse(code == "3117XX", "Agriculture, forestry, fishing and hunting", level_2),
          level_3 = ifelse(code == "3117XX", "Food Manufacturing", level_3),
          level_4 = ifelse(code == "3117XX", name, level_4),
          level_5 = ifelse(code == "3117XX", NA, level_5),
@@ -79,6 +80,9 @@ charvals = df %>% select(Char_1, Char_2, Char_3, Char_4, Char_5) %>% distinct()
 # Find level-1 Characteristics
 Char_1 <- df %>% filter(!is.na(Char_2), is.na(Char_3)) %>% pull(Char_1) %>% 
   unique()
+
+#only retain naics with data
+naics = naics[naics$code %in% df$code, ]
 
 df = merge(df, naics, by= "code")
 
@@ -246,6 +250,13 @@ top3 <- map(cats, ~ df %>% filter(Char_1 == .x, !is.na(Char_2),
                         .groups = "drop") %>% 
               arrange(desc(Fatalities)) %>% head(3) %>% 
               pull(Characteristic)) %>% setNames(cats)
+
+wrapper <- function(x, ...) 
+{
+  paste(strwrap(x, ...), collapse = "\n")
+}
+
+
 ```
 
 About
@@ -263,8 +274,8 @@ Inputs {.sidebar data-width=400}
 ```{r}
 
 treecheckInput(
-    inputId = "naicsval",
-    label = "Choose an Industry Group:",
+    inputId = "naicsval",selected = "Agriculture, forestry, fishing and hunting",
+    label = "Choose an Industry Group:", 
     choices = make_tree(
       data = naics, levels = c("level_2", "level_3", "level_4", "level_5","level_6") ))
     
@@ -277,7 +288,7 @@ selectInput('state', 'State', choices = unique(df$State),
 
 treecheckInput(
     inputId = "char",
-    label = "Choose specific injury characteristics:",
+    label = "Choose specific injury characteristics:",selected="Total",
     choices = make_tree(
      data = charvals, levels = c( "Char_1", "Char_2", "Char_3") ))
 
@@ -332,7 +343,12 @@ renderPlotly({
   print(input$naicsval)
   print(plotdata)
   
-  if(nrow(plotdata) > 0 & length(input$naicsval) > 0 & length(input$char) > 0){
+  if(nrow(plotdata) > 0 & 
+     length(unlist(input$naicsval)) > 0 & 
+     length(unlist(input$char)) > 0){
+    
+    
+    
  p <- ggplot(plotdata, aes(x = Year, y = Fatalities, 
                            color = Characteristic)) + 
    geom_point() + 
@@ -342,14 +358,30 @@ renderPlotly({
    scale_x_continuous(breaks = integer_breaks()) + 
     scale_y_continuous(breaks = integer_breaks(), 
                        limits = c(0, max(plotdata$Fatalities,na.rm=T)+5)) +
-   ggtitle(unique(plotdata$name))
+   ggtitle(wrapper(paste(unlist(unique(plotdata$name)), 
+                         collapse = "|"),width = 50))
    
     
   ggplotly(p)
-  } else if (length(input$naicsval) == 0)
-    ggplot()+ggtitle("Please use the menu to select an industy group. Use the > symbol to navigate through levels.")
-  else ggplot()+ggtitle("No data exists for the combination of variables you selected. Please modify your selection.")
-  
+  } else if (length(unlist(input$naicsval)) == 0)
+  {
+    p1 = ggplot() +                      # Draw ggplot2 plot with text only
+  annotate("text",
+           x = 1,
+           y = 1,
+           size = 4,
+           label = "Please use the menu to select an industy group. \nUse the > symbol to navigate through levels.") +   theme_void()
+    ggplotly(p1)%>% config(displayModeBar = F)%>% layout(grid = NULL)
+  }
+  else 
+    {# Draw ggplot2 plot with text only
+ p2= ggplot() + annotate("text",
+           x = 1,
+           y = 1,
+           size = 2,
+           label = "No data exists for the combination of variables you selected. \nPlease modify your selection." ) +   theme_void()
+  ggplotly(p2)%>% config(displayModeBar = F)%>% layout(grid = NULL)
+    }
 
 })
 
