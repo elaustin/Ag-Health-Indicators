@@ -68,28 +68,18 @@ naics <- naics %>%
          level_5 = ifelse(code == "3117XX", NA, level_5),
          level_6 = ifelse(code == "3117XX", NA, level_6))
 
-naics <- naics %>% 
-  group_by(code2) %>%  
-  fill( level_2)
+naics <- naics %>% group_by(code2) %>% fill(level_2)
 
+# Add notation for Primary (1°) source and Secondary (2°) source
 df <- df %>% 
-  mutate(Char_2 = ifelse(!is.na(Char_2) & Char_1 == "Primary source", 
-                         paste(Char_2, "(1°)"), Char_2),
-         Char_3 = ifelse(!is.na(Char_3) & Char_1 == "Primary source", 
-                         paste(Char_3, "(1°)"), Char_3),
-         Char_4 = ifelse(!is.na(Char_4) & Char_1 == "Primary source", 
-                         paste(Char_4, "(1°)"), Char_4),
-         Char_5 = ifelse(!is.na(Char_5) & Char_1 == "Primary source", 
-                         paste(Char_5, "(1°)"), Char_5),
-         Char_2 = ifelse(!is.na(Char_2) & Char_1 == "Secondary source", 
-                         paste(Char_2, "(2°)"), Char_2),
-         Char_3 = ifelse(!is.na(Char_3) & Char_1 == "Secondary source", 
-                         paste(Char_3, "(2°)"), Char_3),
-         Char_4 = ifelse(!is.na(Char_4) & Char_1 == "Secondary source", 
-                         paste(Char_4, "(2°)"), Char_4),
-         Char_5 = ifelse(!is.na(Char_5) & Char_1 == "Secondary source", 
-                         paste(Char_5, "(2°)"), Char_5))
+  mutate(across(num_range("Char_",2:5), 
+                ~ ifelse(!is.na(.x) & Char_1 == "Primary source", 
+                         paste(.x, "(1°)"), .x))) %>% 
+  mutate(across(num_range("Char_",2:5), 
+                ~ ifelse(!is.na(.x) & Char_1 == "Secondary source", 
+                         paste(.x, "(2°)"), .x)))
 
+# Create a data frame of characteristic values/levels for selection list
 charvals = df %>% 
   select(Char_1, Char_2, Char_3, Char_4, Char_5) %>% unique()
 
@@ -359,13 +349,15 @@ renderPlotly({
   plotdata = (total_fatalities())}, silent = T)
   
   # Check for required values
-  req(input$char)
-  req(input$naicsval)
+  # req(input$char)
+  # req(input$naicsval)
   
   # View required values
   # print(input$char)
   # print(input$naicsval)
   # print(plotdata)
+  
+  browser()
   
   if (nrow(plotdata) > 0 &
       length(unlist(input$naicsval)) > 0 &
