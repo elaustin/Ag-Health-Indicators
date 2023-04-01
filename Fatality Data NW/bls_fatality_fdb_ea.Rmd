@@ -358,9 +358,14 @@ renderPlotly({
   try({
   plotdata = (total_fatalities())}, silent = T)
   
-  print(input$char)
-  print(input$naicsval)
-  print(plotdata)
+  # Check for required values
+  req(input$char)
+  req(input$naicsval)
+  
+  # View required values
+  # print(input$char)
+  # print(input$naicsval)
+  # print(plotdata)
   
   if (nrow(plotdata) > 0 &
       length(unlist(input$naicsval)) > 0 &
@@ -404,7 +409,6 @@ renderPlotly({
     
     ggplotly(p2) %>% config(displayModeBar = F) %>% layout(grid = NULL)
   }
-
 })
 
 ```
