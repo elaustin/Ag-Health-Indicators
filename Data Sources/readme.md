@@ -111,7 +111,7 @@ https://download.bls.gov/pub/time.series/fw/
 - Completeness varies by industry and State
 - Includes colated data from 2015 on, accessibe through [OSHA ITA severe injuries](https://www.osha.gov/injuryreporting/)
   
-
+- OSHA fatalities Inspections: https://www.osha.gov/ords/imis/accidentsearch.html
 ---
 
 **File maintained by:**  
