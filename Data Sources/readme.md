@@ -95,6 +95,16 @@ Access: Available at the case level (requires data sharing agreement).
 
 ---
 
+##  OSHA Injury Tracking Application (ITA) 
+**Website:** [OSHA ITA](https://www.osha.gov/injuryreporting/))
+**Description:**
+-Establishments covered under the Occupational Safety and Health (OSH) Act.
+-Small employers (< 10 employees) in low-hazard industries and most state/local government agencies (outside state-plan states).
+-In 2024, OSHA received summary data from over 370,000 establishments and case-level data for approximately 850,000 injuries and illnesses across roughly 90,000 establishments.
+-National (United States), with varying completeness by state and industry.
+
+---
+
 **File maintained by:**  
 *RISC 2.0 Project – PNASH Center, University of Washington*  
 *Last updated: October 2025*
