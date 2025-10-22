@@ -83,7 +83,13 @@ Access: Available at the case level (requires data sharing agreement).
 **Description:**
 - Publicly available at the state level  
 - Provides counts and rates of occupational injury and mortality by 4-digit NAICS  
-- Supports sector-specific and longitudinal injury tracking.  
+- Supports sector-specific and longitudinal injury tracking.
+
+## BLS Survey of Fatalities (CFOI)
+
+**Description:**
+https://download.bls.gov/pub/time.series/fw/
+- Occupational Fatalities
 
 ---
 
