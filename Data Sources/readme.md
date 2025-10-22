@@ -103,6 +103,8 @@ Access: Available at the case level (requires data sharing agreement).
 - Excludes small employers (< 10 employees) in low-hazard industries 
 - Includes extensive reporting
 - Completeness varies by industry and State
+- Includes colated data from 2015 on, accessibe through [OSHA ITA severe injuries](https://www.osha.gov/injuryreporting/)
+  
 
 ---
 
