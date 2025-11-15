@@ -111,10 +111,11 @@ https://download.bls.gov/pub/time.series/fw/
 - Completeness varies by industry and State
 - Includes colated data from 2015 on, accessibe through [OSHA ITA severe injuries](https://www.osha.gov/injuryreporting/)
   
-- OSHA fatalities Inspections: https://www.osha.gov/ords/imis/accidentsearch.html
+- OSHA fatalities Inspections: https://www.osha.gov/ords/imis/accidentsearch.html (digital records available from 2016 onward; historical data coverage extends back to 1984 and might be available as PDF files)
+- OSHA Establishment Inspections: https://www.osha.gov/ords/imis/establishment.html
 ---
 
 **File maintained by:**  
 *RISC 2.0 Project – PNASH Center, University of Washington*  
-*Last updated: October 2025*
+*Last updated: November 2025*
 
