@@ -111,8 +111,9 @@ https://download.bls.gov/pub/time.series/fw/
 - Completeness varies by industry and State
 - Includes colated data from 2015 on, accessibe through [OSHA ITA severe injuries](https://www.osha.gov/injuryreporting/)
   
-- OSHA fatalities Inspections: https://www.osha.gov/ords/imis/accidentsearch.html (digital records available from 2016 onward; historical data coverage extends back to 1984 and might be available as PDF files)
-- OSHA Establishment Inspections: https://www.osha.gov/ords/imis/establishment.html
+- OSHA **Accident Search** (Investigation Summaries): https://www.osha.gov/ords/imis/accidentsearch.html. This contains the "Accident Report Details", which include an "accident summary Nr." and "inspection Nr." that could possibly be used for data linkage.  
+- OSHA **Establishment Inspection**: https://www.osha.gov/ords/imis/establishment.html
+- OSHA **Fatality Inspection** Data (Investigation Summaries (for fatility acciedent) + Inspection Details (for establishment)): https://www.osha.gov/fatalities. This contains the combined summary from the above two data sources, including OSHA Accident Search and OSHA Establishment Inspection. 
 ---
 
 **File maintained by:**  
