@@ -110,7 +110,8 @@ https://download.bls.gov/pub/time.series/fw/
 - Includes extensive reporting
 - Completeness varies by industry and State
 - Includes colated data from 2015 on, accessibe through [OSHA ITA severe injuries](https://www.osha.gov/injuryreporting/)
-- ITA case details and summary data: https://www.osha.gov/Establishment-Specific-Injury-and-Illness-Data (case details are availblae for only 2023 and 2024). 
+- ITA case details and summary data: https://www.osha.gov/Establishment-Specific-Injury-and-Illness-Data (case details are available for only 2023 and 2024).
+  
 ---
 
 ##  OSHA IMIS 
