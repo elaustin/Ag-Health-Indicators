@@ -105,12 +105,12 @@ https://download.bls.gov/pub/time.series/fw/
 **Website:** [OSHA ITA](https://www.osha.gov/injuryreporting/)
 
 **Description:**
-- Reported by establishments covered by OSAH
+- Reported by establishments covered by OSHA. 
 - Excludes small employers (< 10 employees) in low-hazard industries 
 - Includes extensive reporting
 - Completeness varies by industry and State
 - Includes colated data from 2015 on, accessibe through [OSHA ITA severe injuries](https://www.osha.gov/injuryreporting/)
-
+- ITA case details and summary data: https://www.osha.gov/Establishment-Specific-Injury-and-Illness-Data (case details are availblae for only 2023 and 2024). 
 ---
 
 ##  OSHA IMIS 
