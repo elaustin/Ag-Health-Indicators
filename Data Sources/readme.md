@@ -56,9 +56,9 @@ Access: Available at the case level (requires data sharing agreement).
 
 **Description:**
 - Based on unemployment insurance data submitted by employers.  
-- Available at the 2-digit NAICS code level (recoded every 5 years).  
+- Available at the 2-digit NAICS code level (recoded every 5 years).
 - Publicly available dataset.  
-- Year-to-year comparisons can be challenging due to reporting changes.  
+- Useful for employment denominators, although year-to-year comparisons may be affected by reporting changes and NAICS revisions.
 
 ---
 
@@ -114,13 +114,41 @@ https://download.bls.gov/pub/time.series/fw/
   
 ---
 
-##  OSHA IMIS 
-- OSHA **Accident Search** (Investigation Summaries): https://www.osha.gov/ords/imis/accidentsearch.html. This contains the "Accident Report Details", which include an "accident summary Nr." and "inspection Nr." that could possibly be used for data linkage.  
-- OSHA **Establishment Inspection**: https://www.osha.gov/ords/imis/establishment.html
-- OSHA **Fatality Inspection** Data (Investigation Summaries (for fatility acciedent) + Inspection Details (for establishment)): https://www.osha.gov/fatalities. This contains the combined summary from the above two data sources, including OSHA Accident Search and OSHA Establishment Inspection. 
+## OSHA IMIS and Related OSHA Data Systems
+
+### OSHA Accident Search (Investigation Summaries)
+
+**Website:** https://www.osha.gov/ords/imis/accidentsearch.html
+
+**Description:**
+- Contains Accident Report Details.
+- Includes both an **Accident Summary Number** and an **Inspection Number**, which may support linkage to other OSHA inspection records.
+
+### OSHA Establishment Inspection Search
+
+**Website:** https://www.osha.gov/ords/imis/establishment.html
+
+**Description:**
+- Provides establishment inspection records and related enforcement information.
+
+### OSHA Fatality Inspection Data
+
+**Website:** https://www.osha.gov/fatalities
+
+**Description:**
+- Provides fatality-related investigation summaries and inspection details.
+- Combines information related to OSHA Accident Search and OSHA Establishment Inspection sources.
+- Useful for fatal occupational injury surveillance and linkage to inspection context.
+
+## Notes
+
+- Many datasets can be linked through geographic identifiers such as county or ZIP code.
+- Cross-referencing CHARS, L&I, BLS, and OSHA data can improve completeness of injury surveillance.
+- Access levels vary. Some datasets are public, while others require restricted access or data-use agreements.
+
 ---
 
 **File maintained by:**  
 *RISC 2.0 Project – PNASH Center, University of Washington*  
-*Last updated: November 2025*
+*Last updated: March 2026*
 
